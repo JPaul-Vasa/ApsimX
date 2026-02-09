@@ -4,7 +4,6 @@ using APSIM.Shared.Utilities;
 using Gdk;
 using Models.Core;
 using Models.Core.Apsim710File;
-using Models.Core.ApsimFile;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -1005,7 +1004,7 @@ namespace UserInterface.Presenters
         {
             try
             {
-                string fileName = this.AskUserForOpenFileName("ApsimX files|*.apsimx");
+                string fileName = this.AskUserForOpenFileName("APSIM files (*.apsimx, *.json)|*.apsimx;*.json");
                 if (fileName != null)
                 {
                     bool onLeftTabControl = this.view.IsControlOnLeft(sender);

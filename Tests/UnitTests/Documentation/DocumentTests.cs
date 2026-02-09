@@ -2,7 +2,6 @@ using APSIM.Shared.Utilities;
 using APSIM.Shared.Documentation;
 using APSIM.Documentation.Models;
 using Models.Core;
-using Models.Core.ApsimFile;
 using System.Collections.Generic;
 using NUnit.Framework;
 using System.IO;
@@ -24,7 +23,7 @@ namespace UnitTests.Documentation
         public void TestDocumentationStructure()
         {
             string apsimx = PathUtilities.GetAbsolutePath("%root%", null);
-            foreach (string file in APSIM.Documentation.TestUtilities.FILES)
+            foreach (string file in TestUtilities.FILES)
             {
                  string resources = Path.Combine(apsimx, "Tests", "Validation", file) + "/";
                 if (file == "Report" || file == "Manager")
@@ -40,7 +39,7 @@ namespace UnitTests.Documentation
                 List<ITag> actualTags = AutoDocumentation.Document(sims);
 
                 string savedJSON = ReflectionUtilities.GetResourceAsString("UnitTests.Documentation.TestFiles."+file+".json");
-                List<ITag> expectedTags = APSIM.Documentation.TestUtilities.GetTags(savedJSON);
+                List<ITag> expectedTags = TestUtilities.GetTags(savedJSON);
 
                 MatchTagStructure(expectedTags, actualTags, file);
             }
@@ -78,8 +77,8 @@ namespace UnitTests.Documentation
         [Test]
         public void TestProcessCitationsReplacesCitationWithLink()
         {
-            string text = "This is a citation [brown_plant_2014] and some more text.";
-            string expected = "This is a citation [Brown et al., 2014](#references) and some more text.";
+            string text = "This is a citation [#brown_plant_2014] and some more text.";
+            string expected = "This is a citation [Brown et al., 2014](#brown_plant_2014) and some more text.";
             WebDocs.ProcessCitations(text, out string actual);
             Assert.That(actual, Is.EqualTo(expected));
         }

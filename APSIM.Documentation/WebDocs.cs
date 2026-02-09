@@ -15,6 +15,7 @@ using APSIM.Shared.Mapping;
 using SkiaSharp;
 using APSIM.Documentation.Graphing;
 using APSIM.Core;
+using APSIM.Shared.Documentation.Extensions;
 
 namespace APSIM.Documentation
 {
@@ -96,7 +97,11 @@ namespace APSIM.Documentation
         /// </summary>
         public static string GetCSS()
         {
-            return ReflectionUtilities.GetResourceAsString("APSIM.Documentation.Resources.docs.css");
+            string css = "";
+            css += ReflectionUtilities.GetResourceAsString("APSIM.Documentation.Resources.prism.css");
+            css += "\n";
+            css += ReflectionUtilities.GetResourceAsString("APSIM.Documentation.Resources.docs.css");
+            return css;
         }
 
         /// <summary>
@@ -106,7 +111,8 @@ namespace APSIM.Documentation
         public static string Generate(IModel model)
         {
             string html = GenerateWeb(model);
-            html = AddBoilerplate(model.Name + " Documentation", GetCSS(), html);
+            string name = DocumentationUtilities.GetDocumentationName(model);
+            html = AddBoilerplate($"{name} Documentation", GetCSS(), html);
             return html;
         }
 
@@ -174,7 +180,6 @@ namespace APSIM.Documentation
             {
                 if (tag is Section section)
                 {
-
                     string id = section.Title.ToLower().Replace(" ", "-");
                     html += $"<a href=\"#{id}\"><div class=\"docs-nav\">{section.Title}</div></a>\n";
                 }
@@ -261,7 +266,7 @@ namespace APSIM.Documentation
                     lines = ConvertMarkdownCode(lines);
                     foreach (string line in lines)
                     {
-                        string text = line.Trim();
+                        string text = line;
                         if (text.StartsWith('#'))
                         {
                             string hashes = "#";
@@ -353,30 +358,54 @@ namespace APSIM.Documentation
         /// </summary>
         public static List<ICitation> ProcessCitations(string input, out string output)
         {
-
-            Regex regex = new Regex(@"\[\w+\]");
-            MatchCollection matches = regex.Matches(input);
-
             output = input;
             List<ICitation> citations = new List<ICitation>();
-            List<string> citesFound = new List<string>();
+            Regex regex;
+            MatchCollection matches;
 
+            //Find references without overriding text and convert to standard
+            regex = new Regex(@"(?<!])\[#([^\]]+)\](?![(\[])");
+            matches = regex.Matches(input);
+            int offset = 0;
             foreach(Match match in matches)
             {
-                string value = match.Value;
-                string cleanedValue = value.Replace("[", "").Replace("]", "");
-                if (!citesFound.Contains(cleanedValue))
+                string value = match.Groups[0].Value;
+                string reference = match.Groups[1].Value;
+                ICitation citation = AutoDocumentation.Bibilography.Lookup(reference);
+                if (citation != null)
                 {
-                    citesFound.Add(cleanedValue);
-                    ICitation citation = AutoDocumentation.Bibilography.Lookup(cleanedValue);
-                    if (citation != null)
-                    {
-                        citations.Add(citation);
-                        output = output.Replace(value, $"[{citation.InTextCite}](#references)");
-                    }
+                    string markdownCite = $"[{citation.InTextCite}][#{reference}]";
+                    output = output.Remove(match.Index + offset, value.Length);
+                    output = output.Insert(match.Index + offset, markdownCite);
+                    offset += markdownCite.Length - value.Length;
                 }
             }
 
+            //Find references with overriding text
+            List<string> valuesReplaced = new List<string>();
+            List<string> citesFound = new List<string>();
+            regex = new Regex(@"\[([^\]]+)\]\[\#([^\]]+)\]");
+            matches = regex.Matches(output);
+            foreach(Match match in matches)
+            {
+                string value = match.Groups[0].Value;
+                string text = match.Groups[1].Value;
+                string reference = match.Groups[2].Value;
+                ICitation citation = AutoDocumentation.Bibilography.Lookup(reference);
+                if (citation != null)
+                {
+                    if (!citesFound.Contains(reference))
+                    {
+                        citesFound.Add(reference);
+                        citations.Add(citation);
+                    }
+                    if (!valuesReplaced.Contains(value))
+                    {
+                        valuesReplaced.Add(value);
+                        output = output.Replace(value, $"[{text}](#{reference})");
+                    }
+                }
+            }
             return citations;
         }
 
@@ -385,28 +414,21 @@ namespace APSIM.Documentation
         /// </summary>
         public static string WriteBibliography(List<ICitation> citations)
         {
-            string output = "";
-
-            // Ensure references in bibliography are sorted alphabetically
-            // by their full text.
+            // Ensure references in bibliography are sorted alphabetically by their full text.
             IEnumerable<ICitation> sorted = citations.OrderBy(c => c.BibliographyText);
 
+            string output = "";
             foreach (ICitation citation in sorted)
             {
+                //if no link, wrap in a p tag, if using a link, use a a href instead
+                string contents = $"{citation.BibliographyText}";
+                if (!string.IsNullOrEmpty(citation.URL))
+                    contents = $"[{citation.BibliographyText}]({citation.URL})";
 
-                // If a URL is provided for this citation, insert the citation
-                // as a hyperlink.
-                bool isLink = !string.IsNullOrEmpty(citation.URL);
-                if (isLink)
-                {
-                    output += $"[{citation.BibliographyText}]({citation.URL})\n\n";
-                }
-                else
-                {
-                    output += $"{citation.BibliographyText}\n\n";
-                }
+                output += $"{contents}";                            //contents of reference
+                output += $"<div id=\"{citation.Name}\"></div>";    //div tag for navigation
+                output += $"\n\n";                                  //space to ensure newlines
             }
-
             return output;
         }
 
@@ -538,6 +560,9 @@ namespace APSIM.Documentation
             output += "</head>\n";
             output += "<body>\n";
             output += content;
+            output += "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/prism.min.js\"></script>";
+            output += "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/components/prism-csharp.min.js\"></script>";
+            output += "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/prism/1.30.0/plugins/keep-markup/prism-keep-markup.min.js\"></script>";
             output += "</body>\n";
             output += "</html>\n";
             return output;
@@ -565,31 +590,28 @@ namespace APSIM.Documentation
             // Get consecutive lines that start with triple tabs.
             bool inCodeBlock = false;
             List<string> formattedLines = new();
-            string pdfCodeLine = @"(\t{3})(.*)";
+            string codeSyntax = @"(```)(.*)";
 
             foreach (string line in paraLines)
             {
-                if(Regex.IsMatch(line, pdfCodeLine))
-                {
+                if(Regex.IsMatch(line, codeSyntax))
                     if(!inCodeBlock)
-                    {
-                        formattedLines.Add("");
-                        formattedLines.Add("```");
                         inCodeBlock = true;
-                    }
-                    formattedLines.Add(line);
-                }
                 else
-                {
                     if(inCodeBlock)
-                    {
-                        formattedLines.Add("```");
-                        formattedLines.Add("");
                         inCodeBlock = false;
-                    }
-                    formattedLines.Add(line);
-                }
+
+                string text = line;
+
+                //add csharp language to code if not there
+                if (inCodeBlock && line.Trim() == "```")
+                    text += "csharp";
+                
+                if (!inCodeBlock)
+                    text = line.Trim();
+                formattedLines.Add(text);
             }
+
             return formattedLines.ToList();
         }
 

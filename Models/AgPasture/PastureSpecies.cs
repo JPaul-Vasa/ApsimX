@@ -264,12 +264,8 @@ namespace Models.AgPasture
         /// </remarks>
         public void Sow(string cultivar, double population, double depth, double rowSpacing, double maxCover = 1, double budNumber = 1, double rowConfig = 1, double seeds = 0, int tillering = 0, double ftn = 0.0)
         {
-            
-            if(IsAlive==false)
-
-            // if (isAlive)
-            //     mySummary.WriteMessage(this, " Cannot sow the pasture species \"" + Name + "\", as it is already growing", MessageType.Warning);
-            // else
+            if (isAlive==false)
+           
             {
 
                 // Find cultivar and apply cultivar overrides.
@@ -2252,7 +2248,11 @@ namespace Models.AgPasture
         public IBiomass AboveGround
         {
             get
-            {
+            {   
+
+                if(Leaf==null || Stem == null || Stolon == null)
+                    return new Biomass();
+
                 Biomass mass = new Biomass();
                 mass.StructuralWt = (Leaf.StandingHerbageWt + Stem.StandingHerbageWt + Stolon.StandingHerbageWt) / 10.0; // to g/m2
                 mass.StructuralN = (Leaf.StandingHerbageN + Stem.StandingHerbageN + Stolon.StandingHerbageN) / 10.0;    // to g/m2
@@ -2266,11 +2266,17 @@ namespace Models.AgPasture
         public IBiomass AboveGroundHarvestable
         {
             get
-            {
+            {   
+                
+                if(Leaf==null || Stem == null || Stolon == null)
+                    return new Biomass();
+                                   
                 Biomass mass = new Biomass();
                 mass.StructuralWt = Harvestable.Wt / 10.0; // to g/m2
                 mass.StructuralN = Harvestable.N / 10.0;    // to g/m2
-                return mass;
+                return mass; 
+                
+                
             }
         }
 
@@ -2555,10 +2561,8 @@ namespace Models.AgPasture
             {
                 initialDMFractions = initialDMFractionsForbs;
             }
-            
-            if (InitialShootDM >= 0 && InitialRootDM >= 0 && InitialRootDepth >= 0 ) 
-            {
-                // determine what biomass to reset the organs to. If a negative InitialShootDM 
+
+            // determine what biomass to reset the organs to. If a negative InitialShootDM
             //  was specified by user then that means the plant isn't sown yet so reset
             //  the organs to zero biomass. This is the reason Max is used below.
                 var shootDM = Math.Max(0.0, InitialShootDM);
@@ -2593,40 +2597,24 @@ namespace Models.AgPasture
                                      rootDepth: InitialRootDepth);
 
             // set initial phenological stage
-                // if (MathUtilities.IsGreaterThan(InitialShootDM, 0.0))
-                // {
-                //     phenologicStage = 1;
-                // }
-                // else if (MathUtilities.FloatsAreEqual(InitialShootDM, 0.0, Epsilon))
-                // {
-                //     phenologicStage = 0;
-                // }
-                // else 
-                // {
-                //      phenologicStage = -1;
-                // }
-
-                // if (phenologicStage >= 0)
-                // {
-                //     isAlive = true;
-                // }
-
-                if(InitialShootDM > 0 && InitialRootDM >0 && InitialRootDepth > 0)
-                 {
-                    phenologicStage=1;
-                    isAlive=true;
-                    
-                 }
-                else if (InitialShootDM == 0 && InitialRootDM==0 && InitialRootDepth == 0)
-                 {
-                       EndCrop();
-                 }
-          
-                                   
-
+            if (MathUtilities.IsGreaterThan(InitialShootDM, 0.0))
+            {
+                phenologicStage = 1;
             }
-            else throw new Exception("AgPasture: Please enter initial biomasss greater than or equal to zero");
-            
+            else if (MathUtilities.FloatsAreEqual(InitialShootDM, 0.0, Epsilon))
+            {
+                phenologicStage = 0;
+            }
+            else
+            {
+                phenologicStage = -1;
+            }
+
+            if (phenologicStage >= 0)
+            {
+                isAlive = true;
+            }
+
             // Calculate the values for LAI
             EvaluateLAI();
 
