@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <fwsimulation name="Pasture_component_test">
   <fwsversion>1.1</fwsversion>
-  <lastsaved>2026/03/10 15:26:52</lastsaved>
+  <lastsaved>2026/03/11 11:31:44</lastsaved>
   <component name="time_server" active="T" class="Time Server">
     <executable name="timesvr.dll" version="1.1"/>
     <initdata>
@@ -1526,6 +1526,20 @@
               </element>
               <element>
                 <field name="varname" kind="string">
+                  <val>farm.pasture01.ryegrass.shoot_dm</val>
+                </field>
+                <field name="alias" kind="string">
+                  <val>farm.pasture01.ryegrass.shoot_dm</val>
+                </field>
+                <field name="aggreg" kind="string">
+                  <val>none</val>
+                </field>
+                <field name="decplaces" kind="integer4">
+                  <val>2</val>
+                </field>
+              </element>
+              <element>
+                <field name="varname" kind="string">
                   <val>farm.pasture01.ryegrass.shoot_n</val>
                 </field>
                 <field name="alias" kind="string">
@@ -1905,6 +1919,7 @@
 <klat></klat>
 <max_pond></max_pond>
 </initdata>
+
         </component>
 
 
@@ -1995,6 +2010,7 @@
 <enr_b_coeff>   0.2  </enr_b_coeff>
 <profile_reduction>off</profile_reduction>
 </initdata>
+
         </component>
 
 
@@ -2077,6 +2093,7 @@
 <cnr>   60.0    60.0     80.0      60.0</cnr>
 <standing_fraction>0.0 0.0 0.0 0.0</standing_fraction>
 </initdata>
+
         </component>
 
 
