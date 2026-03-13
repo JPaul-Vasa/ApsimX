@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <fwsimulation name="Pasture_component_test">
   <fwsversion>1.1</fwsversion>
-  <lastsaved>2026/03/11 11:31:44</lastsaved>
+  <lastsaved>2026/03/11 15:26:33</lastsaved>
   <component name="time_server" active="T" class="Time Server">
     <executable name="timesvr.dll" version="1.1"/>
     <initdata>
@@ -1919,7 +1919,6 @@
 <klat></klat>
 <max_pond></max_pond>
 </initdata>
-
         </component>
 
 
@@ -2010,7 +2009,6 @@
 <enr_b_coeff>   0.2  </enr_b_coeff>
 <profile_reduction>off</profile_reduction>
 </initdata>
-
         </component>
 
 
@@ -2093,7 +2091,6 @@
 <cnr>   60.0    60.0     80.0      60.0</cnr>
 <standing_fraction>0.0 0.0 0.0 0.0</standing_fraction>
 </initdata>
-
         </component>
 
 
