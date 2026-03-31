@@ -83,6 +83,22 @@ namespace Models.GrazPlan.Organs
             return result;
              
         }
+
+        /// <summary>
+        /// Get the average digestibility of this herbage
+        /// </summary>
+        /// <param name="comp">Herbage component</param>
+        /// <param name="part">Plant part</param>
+        /// <returns></returns>
+        private double GetDMD(int comp, int part)
+        {
+            string sUnit = PastureModel.MassUnit;
+            PastureModel.MassUnit = "kg/ha";
+            double result = PastureModel.Digestibility(comp, part);
+            PastureModel.MassUnit = sUnit;
+
+            return result;
+        }
         
 
         /// <summary>
@@ -204,6 +220,127 @@ namespace Models.GrazPlan.Organs
         }
 
 
+        /// Organ digestibility of live material   
+         public double LiveDigestibility
+        {
+            get
+            {   
+                if (PastureModel != null)
+                {
+                    if(Name=="Leaf"  && IsAboveGround is true)
+                       return GetDMD(GrazType.TOTAL, GrazType.ptLEAF);
+                    if(Name=="Stem"  && IsAboveGround is true)
+                       return GetDMD(GrazType.TOTAL, GrazType.ptSTEM);
+                    if (Name == "Root" && IsAboveGround is false)
+                    {
+                        return  GetDMRoot()/10.0 * PastureModel.GetRootConc(GrazType.sgGREEN, GrazType.TOTAL, GrazType.TOTAL, TPlantElement.N);
+                    }
+                }
+                
+                return 0;
+            }
+        }
+
+
+         /// Organ digestibility of dead material   
+         public double DeadDigestibility
+        {
+            get
+            {   
+                if (PastureModel != null)
+                {
+                    if(Name=="Leaf"  && IsAboveGround is true)
+                       return 0;
+                    if(Name=="Stem"  && IsAboveGround is true)
+                       return 0;
+                    if (Name == "Root" && IsAboveGround is false)
+                    {
+                        return  0;
+                    }
+                }
+                
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// live biomass of the organ (structural + storage)
+        /// </summary>
+         public PMF.Biomass Live
+        {
+            get
+            {   
+                PMF.Biomass mass = new PMF.Biomass();
+                if (Name=="Leaf"  && IsAboveGround is true)
+                {
+                    mass.StructuralWt = GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10.0;  // to g/m2
+                    mass.StructuralN = GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10;
+                    mass.StorageWt=0;
+                    mass.StorageN=0;
+                    mass.StorageN=0;
+                
+                }
+                if (Name=="Stem"  && IsAboveGround is true)
+                {
+                    mass.StructuralWt = GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10.0;  // to g/m2
+                    mass.StructuralN = GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10;
+                    mass.StorageWt=0;
+                    mass.StorageN=0;
+                    mass.StorageN=0;
+                
+                }
+
+
+                
+                return mass;
+            }
+        }
+
+         /// <summary>
+        /// Dead biomass of the organ (structural + storage)
+        /// </summary>
+         public PMF.Biomass Dead
+        {
+            get
+            {   
+                PMF.Biomass mass = new PMF.Biomass();
+                if (Name=="Leaf"  && IsAboveGround is true)
+                {
+                    mass.StructuralWt = 0;
+                    mass.StructuralN = 0;
+                    mass.StorageWt=0;
+                    mass.StorageN=0;
+                    mass.StorageN=0;
+                
+                }
+                if (Name=="Stem"  && IsAboveGround is true)
+                {
+                    mass.StructuralWt = 0;
+                    mass.StructuralN = 0;
+                    mass.StorageWt=0;
+                    mass.StorageN=0;
+                    mass.StorageN=0;
+                
+                }
+
+
+                
+                return mass;
+            }
+        }
+
+
+         /// <summary>
+        /// Gets the material components of the organ.
+        /// </summary>
+        public IEnumerable<DamageableBiomass> Material
+        {
+            get
+            {
+                yield return new DamageableBiomass($"{Parent.Name}.{Name}", Live, true, LiveDigestibility);
+                yield return new DamageableBiomass($"{Parent.Name}.{Name}",  Dead,true, DeadDigestibility);
+
+        }
 
 
     }
