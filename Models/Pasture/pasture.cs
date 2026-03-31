@@ -784,6 +784,18 @@ namespace Models.GrazPlan
         
         #endregion IPlant
 
+        /// <summary>
+        /// Invoking defoliation model
+        /// </summary>
+        [Link(IsOptional =true)]
+        public Defoliation defoliation =null;
+
+        
+
+
+
+
+
         /// <summary>Radiation intercepted by the plant's canopy (MJ/m^2/day).</summary>
         [JsonIgnore]
         [Units("MJ/m^2/day")]

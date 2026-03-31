@@ -21,6 +21,9 @@ using APSIM.Core;
 using Models.PMF.Interfaces;
 using Models.PMF;
 using Models.PMF.Organs;
+using Models.PMF.Library;
+using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Models.GrazPlan.Organs
 {
@@ -31,7 +34,7 @@ namespace Models.GrazPlan.Organs
     [PresenterName("UserInterface.Presenters.PropertyPresenter")]
     [ValidParent(ParentType = typeof(Pasture))]
     
-    public class GenericOrgan: Model,IStructureDependency,IBiomass
+    public class GenericOrgan: Model,IStructureDependency,IBiomass,IHasDamageableBiomass,IOrganDamage
     {   
         /// <summary>Structure instance supplied by APSIM.core.</summary>
         [field: NonSerialized]
@@ -269,30 +272,35 @@ namespace Models.GrazPlan.Organs
          public PMF.Biomass Live
         {
             get
-            {   
-                PMF.Biomass mass = new PMF.Biomass();
-                if (Name=="Leaf"  && IsAboveGround is true)
-                {
-                    mass.StructuralWt = GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10.0;  // to g/m2
-                    mass.StructuralN = GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10;
-                    mass.StorageWt=0;
-                    mass.StorageN=0;
-                    mass.StorageN=0;
-                
-                }
-                if (Name=="Stem"  && IsAboveGround is true)
-                {
-                    mass.StructuralWt = GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10.0;  // to g/m2
-                    mass.StructuralN = GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10;
-                    mass.StorageWt=0;
-                    mass.StorageN=0;
-                    mass.StorageN=0;
-                
-                }
 
+            {
+                PMF.Biomass mass = new PMF.Biomass();                
+                if (PastureModel != null)
+                {
+                    
+                    if (Name=="Leaf"  && IsAboveGround is true)
+                    {
+                        mass.StructuralWt = GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10.0;  // to g/m2
+                        mass.StructuralN = GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10;
+                        mass.StorageWt=0;
+                        mass.StorageN=0;
+                        mass.StorageN=0;
+                    
+                    }
+                    if (Name=="Stem"  && IsAboveGround is true)
+                    {
+                        mass.StructuralWt = GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10.0;  // to g/m2
+                        mass.StructuralN = GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10;
+                        mass.StorageWt=0;
+                        mass.StorageN=0;
+                        mass.StorageN=0;
+                    
+                    }
+                 
+                 
 
-                
-                return mass;
+                }
+                 return mass;
             }
         }
 
@@ -304,24 +312,27 @@ namespace Models.GrazPlan.Organs
             get
             {   
                 PMF.Biomass mass = new PMF.Biomass();
-                if (Name=="Leaf"  && IsAboveGround is true)
+                if (PastureModel != null)
                 {
-                    mass.StructuralWt = 0;
-                    mass.StructuralN = 0;
-                    mass.StorageWt=0;
-                    mass.StorageN=0;
-                    mass.StorageN=0;
-                
-                }
-                if (Name=="Stem"  && IsAboveGround is true)
-                {
-                    mass.StructuralWt = 0;
-                    mass.StructuralN = 0;
-                    mass.StorageWt=0;
-                    mass.StorageN=0;
-                    mass.StorageN=0;
-                
-                }
+                    if (Name=="Leaf"  && IsAboveGround is true)
+                    {
+                        mass.StructuralWt = 0;
+                        mass.StructuralN = 0;
+                        mass.StorageWt=0;
+                        mass.StorageN=0;
+                        mass.StorageN=0;
+                    
+                    }
+                    if (Name =="Stem"  && IsAboveGround is true)
+                    {
+                        mass.StructuralWt = 0;
+                        mass.StructuralN = 0;
+                        mass.StorageWt=0;
+                        mass.StorageN=0;
+                        mass.StorageN=0;
+                    
+                    }
+                }    
 
 
                 
@@ -338,9 +349,39 @@ namespace Models.GrazPlan.Organs
             get
             {
                 yield return new DamageableBiomass($"{Parent.Name}.{Name}", Live, true, LiveDigestibility);
-                yield return new DamageableBiomass($"{Parent.Name}.{Name}",  Dead,true, DeadDigestibility);
+                yield return new DamageableBiomass($"{Parent.Name}.{Name}", Dead, false, DeadDigestibility);
 
+            }
+        } 
+         
+
+        /// <summary>Gets the biomass detached (sent to soil/surface organic matter)</summary>
+        [JsonIgnore]
+        public PMF.Biomass Detached { get; private set; }
+
+        /// <summary>Gets the biomass removed from the system (harvested, grazed, etc.)</summary>
+        [JsonIgnore]
+        public PMF.Biomass Removed { get; private set; }
+
+        private BiomassRemoval biomassRemovalModel = null;
+
+        ///Testing BiomassRemoval
+        /// <summary>Remove biomass from organ.</summary>
+        /// <param name="liveToRemove">Fraction of live biomass to remove from simulation (0-1).</param>
+        /// <param name="deadToRemove">Fraction of dead biomass to remove from simulation (0-1).</param>
+        /// <param name="liveToResidue">Fraction of live biomass to remove and send to residue pool(0-1).</param>
+        /// <param name="deadToResidue">Fraction of dead biomass to remove and send to residue pool(0-1).</param>
+        /// <param name="fractionStanding">Fraction of biomass that remains standing when passed to surfaceOM (0-1).</param>
+        /// <returns>The amount of biomass (live+dead) removed from the plant (g/m2).</returns>
+        public double RemoveBiomass(double liveToRemove, double deadToRemove, double liveToResidue, double deadToResidue, double fractionStanding = 0)
+        {
+           return biomassRemovalModel.RemoveBiomass(liveToRemove, deadToRemove, liveToResidue, deadToResidue,
+                                                     Live, Dead, Removed, Detached, fractionStanding);
         }
+        
+
+        
+          
 
 
     }
