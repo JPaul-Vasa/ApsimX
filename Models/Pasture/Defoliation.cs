@@ -69,6 +69,19 @@ namespace Models.GrazPlan
         
         } 
 
+        /// <summary>This method is invoked at the beginning of each day to perform management actions.</summary>
+        [EventSubscribe("StartOfDay")]
+        private void OnStartOfDay(object sender, EventArgs e)
+        {
+            DaysSinceGraze += 1;
+            ProportionOfTotalDM = new double[zones.First().NumForages];
+            PostGrazeDM = 0;
+            ClippingsWtReturned = 0;
+            ClippingsNReturned = 0;
+            foreach (var zone in zones)
+                zone.OnStartOfDay();
+        }
+
         /// <summary>Number of days since grazing.</summary>
         [JsonIgnore]
         public int DaysSinceGraze { get; private set; }

@@ -17,7 +17,7 @@ using System.Linq;
 using static Models.GrazPlan.GrazType;
 using static Models.GrazPlan.PastureUtil;
 using APSIM.Core;
-
+using Models.PMF.Library;
 using Models.PMF.Interfaces;
 using Models.PMF;
 using Models.PMF.Organs;
@@ -222,6 +222,59 @@ namespace Models.GrazPlan.Organs
             }
         }
 
+        
+        private PMF.Biomass liveBiomass = new PMF.Biomass();
+         private PMF.Biomass deadBiomass = new PMF.Biomass();
+         /// <summary>Gets the cohort live.</summary>
+        [JsonIgnore]
+        [Units("g/m^2")]
+        public PMF.Biomass Live
+        {
+            get
+            {
+                CalculateLiveDead();
+                return liveBiomass;
+            }
+
+        }
+
+        /// <summary>
+        /// Dead Biomass
+        /// </summary>
+        [JsonIgnore]
+        [Units("g/m^2")]
+        public PMF.Biomass Dead
+        {
+            get
+            {
+                CalculateLiveDead();
+                return deadBiomass;
+            }
+
+        }
+
+        private void CalculateLiveDead()
+        {
+            if (Name =="Leaf"  && IsAboveGround is true)
+            {
+        
+                liveBiomass.StructuralWt=GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10;
+                liveBiomass.StructuralN=GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10.0 * GetPlantNutr(GrazType.TOTAL, GrazType.ptLEAF, TPlantElement.N);
+                deadBiomass.StructuralWt=0;
+                deadBiomass.StructuralN=0;
+
+            
+            }
+            if (Name == "Stem" && IsAboveGround is true)
+            {
+                liveBiomass.StructuralWt=GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10;
+                liveBiomass.StructuralN= GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10.0 * GetPlantNutr(GrazType.TOTAL, GrazType.ptSTEM, TPlantElement.N);
+                deadBiomass.StructuralWt=0;
+                deadBiomass.StructuralN=0;
+            }
+
+        }    
+
 
         /// Organ digestibility of live material   
          public double LiveDigestibility
@@ -265,81 +318,10 @@ namespace Models.GrazPlan.Organs
                 return 0;
             }
         }
-
-        /// <summary>
-        /// live biomass of the organ (structural + storage)
-        /// </summary>
-         public PMF.Biomass Live
-        {
-            get
-
-            {
-                PMF.Biomass mass = new PMF.Biomass();                
-                if (PastureModel != null)
-                {
-                    
-                    if (Name=="Leaf"  && IsAboveGround is true)
-                    {
-                        mass.StructuralWt = GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10.0;  // to g/m2
-                        mass.StructuralN = GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10;
-                        mass.StorageWt=0;
-                        mass.StorageN=0;
-                        mass.StorageN=0;
-                    
-                    }
-                    if (Name=="Stem"  && IsAboveGround is true)
-                    {
-                        mass.StructuralWt = GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10.0;  // to g/m2
-                        mass.StructuralN = GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10;
-                        mass.StorageWt=0;
-                        mass.StorageN=0;
-                        mass.StorageN=0;
-                    
-                    }
-                 
-                 
-
-                }
-                 return mass;
-            }
-        }
-
-         /// <summary>
-        /// Dead biomass of the organ (structural + storage)
-        /// </summary>
-         public PMF.Biomass Dead
-        {
-            get
-            {   
-                PMF.Biomass mass = new PMF.Biomass();
-                if (PastureModel != null)
-                {
-                    if (Name=="Leaf"  && IsAboveGround is true)
-                    {
-                        mass.StructuralWt = 0;
-                        mass.StructuralN = 0;
-                        mass.StorageWt=0;
-                        mass.StorageN=0;
-                        mass.StorageN=0;
-                    
-                    }
-                    if (Name =="Stem"  && IsAboveGround is true)
-                    {
-                        mass.StructuralWt = 0;
-                        mass.StructuralN = 0;
-                        mass.StorageWt=0;
-                        mass.StorageN=0;
-                        mass.StorageN=0;
-                    
-                    }
-                }    
+        
 
 
-                
-                return mass;
-            }
-        }
-
+       
 
          /// <summary>
         /// Gets the material components of the organ.
