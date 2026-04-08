@@ -20,7 +20,9 @@ using APSIM.Core;
 using Models.GrazPlan.Organs;
 using Models.GrazPlan.Biomass;
 using Models.PMF;
-
+using Models.ForageDigestibility;
+using Models.PMF.Library;
+using DocumentFormat.OpenXml.Wordprocessing;
 
 
 namespace Models.GrazPlan
@@ -3057,7 +3059,7 @@ namespace Models.GrazPlan
         /// Get the litter dry matter that is going to SOM
         /// </summary>
         /// <returns>Biomass removed in kg/ha</returns>
-        private BiomassRemoved TransferLitter()
+        public BiomassRemoved TransferLitter()
         {
             string[] sPartName = { "", "leaf", "stem" };
 
@@ -3099,6 +3101,206 @@ namespace Models.GrazPlan
 
             return removed;
         }
+
+        // /// <summary>
+        // /// Remove a specified amount of above-ground biomass (kg/ha),
+        // /// proportionally across leaf and stem, and return a BiomassRemoved object.
+        // /// </summary>
+        // public BiomassRemoved RemoveBiomass(double amountToRemove)
+        // {
+        //     if (PastureModel == null || amountToRemove <= 0)
+        //         return null;
+
+        //     // Switch to kg/ha for consistency
+        //     string prevUnit = PastureModel.MassUnit;
+        //     PastureModel.MassUnit = "kg/ha";
+
+        //     try
+        //     {
+        //         // Total available biomass
+        //         double totalDM =
+        //             PastureModel.GetHerbageMass(stESTAB, TOTAL, TOTAL) +
+        //             PastureModel.GetHerbageMass(stDEAD, TOTAL, TOTAL);
+
+        //         if (totalDM <= 0)
+        //             return null;
+
+        //         // Cap removal to available biomass
+        //         double removeDM = Math.Min(amountToRemove, totalDM);
+
+        //         // Prepare return object (leaf + stem)
+        //         BiomassRemoved removed = new BiomassRemoved(2);
+        //         removed.CropType = this.Species;
+        //         removed.DMType[0] = "leaf";
+        //         removed.DMType[1] = "stem";
+
+        //         // Proportion of total biomass to remove
+        //         double frac = removeDM / totalDM;
+
+        //         // Loop organs
+        //         for (int part = ptLEAF; part <= ptSTEM; part++)
+        //         {
+        //             int idx = part - 1;
+
+        //             // Remove proportionally from live + dead
+        //             double partDM =
+        //                 PastureModel.GetHerbageMass(stESTAB, part, TOTAL) +
+        //                 PastureModel.GetHerbageMass(stDEAD, part, TOTAL);
+
+        //             double partRemoveDM = partDM * frac;
+        //             removed.dltCropDM[idx] = partRemoveDM;
+
+        //             // Remove N and P proportionally
+        //             double partN =
+        //                 PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.N) +
+        //                 PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.N);
+
+        //             double partP =
+        //                 PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.P) +
+        //                 PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.P);
+
+        //             removed.dltDM_N[idx] = partN * frac;
+        //             removed.dltDM_P[idx] = partP * frac;
+
+        //             removed.FractionToResidue[idx] = 1.0;
+
+        //             // Now remove biomass from each digestibility class
+        //             for (int cls = 1; cls <= HerbClassNo; cls++)
+        //             {
+        //                 // Live
+        //                 double liveDM = PastureModel.GetHerbageMass(stESTAB, part, cls);
+        //                 double liveRemove = liveDM * frac;
+        //                 PastureModel.SetHerbageMass(stESTAB, part, cls, liveDM - liveRemove);
+
+        //                 double liveN = PastureModel.GetHerbageNutr(stESTAB, part, cls, TPlantElement.N);
+        //                 double liveP = PastureModel.GetHerbageNutr(stESTAB, part, cls, TPlantElement.P);
+        //                 PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.N, liveN - liveN * frac);
+        //                 PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.P, liveP - liveP * frac);
+
+        //                 // Dead
+        //                 double deadDM = PastureModel.GetHerbageMass(stDEAD, part, cls);
+        //                 double deadRemove = deadDM * frac;
+        //                 PastureModel.SetHerbageMass(stDEAD, part, cls, deadDM - deadRemove);
+
+        //                 double deadN = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.N);
+        //                 double deadP = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.P);
+        //                 PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.N, deadN - deadN * frac);
+        //                 PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.P, deadP - deadP * frac);
+        //             }
+        //         }
+
+        //         return removed;
+        //     }
+        //     finally
+        //     {
+        //         PastureModel.MassUnit = prevUnit;
+        //     }
+        // }
+
+         /// <summary>
+        /// Remove a specified amount of above-ground biomass (kg/ha),
+        /// proportionally across leaf and stem, and return a BiomassRemoved object.
+        /// </summary>
+        public BiomassRemoved RemoveBiomass(string type, double amount)
+        {
+            if (PastureModel == null || amount <= 0)
+                return null;
+
+            // Switch to kg/ha for consistency
+            string prevUnit = PastureModel.MassUnit;
+            PastureModel.MassUnit = "kg/ha";
+            double amountToRemove;  
+            // Total available biomass
+                double totalDM =
+                    PastureModel.GetHerbageMass(stESTAB, TOTAL, TOTAL) +
+                    PastureModel.GetHerbageMass(stDEAD, TOTAL, TOTAL);
+
+                if (totalDM <= 0)
+                    return null;
+
+                  
+                if(type.ToLower() == "setresidueamount")
+                {
+                    amountToRemove = Math.Max(0.0, totalDM - amount);
+                }
+                else if (type.ToLower() == "setremoveamount")
+                {
+                    amountToRemove = Math.Max(0.0,amount);
+                }
+                else
+                 {
+                throw new ApsimXException(this, "Type of amount to remove on graze not recognized (use \'SetResidueAmount\' or \'SetRemoveAmount\')");
+                
+                }
+                // Cap removal to available biomass
+                //double removeDM = Math.Min(amountToRemove, totalDM);
+
+                // Prepare return object (leaf + stem)
+                BiomassRemoved removed = new BiomassRemoved(2);
+                removed.CropType = this.Species;
+                removed.DMType[0] = "leaf";
+                removed.DMType[1] = "stem";
+
+                // Proportion of total biomass to remove
+                double frac = amountToRemove / totalDM;
+
+                // Loop organs
+                for (int part = ptLEAF; part <= ptSTEM; part++)
+                {
+                    int idx = part - 1;
+
+                    // Remove proportionally from live + dead
+                    double partDM =
+                        PastureModel.GetHerbageMass(stESTAB, part, TOTAL) +
+                        PastureModel.GetHerbageMass(stDEAD, part, TOTAL);
+
+                    double partRemoveDM = partDM * frac;
+                    removed.dltCropDM[idx] = partRemoveDM;
+
+                    // Remove N and P proportionally
+                    double partN =
+                        PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.N) +
+                        PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.N);
+
+                    double partP =
+                        PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.P) +
+                        PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.P);
+
+                    removed.dltDM_N[idx] = partN * frac;
+                    removed.dltDM_P[idx] = partP * frac;
+
+                    removed.FractionToResidue[idx] = 1.0;
+
+                    // Now remove biomass from each digestibility class
+                    for (int cls = 1; cls <= HerbClassNo; cls++)
+                    {
+                        // Live
+                        double liveDM = PastureModel.GetHerbageMass(stESTAB, part, cls);
+                        double liveRemove = liveDM * frac;
+                        PastureModel.SetHerbageMass(stESTAB, part, cls, liveDM - liveRemove);
+
+                        double liveN = PastureModel.GetHerbageNutr(stESTAB, part, cls, TPlantElement.N);
+                        double liveP = PastureModel.GetHerbageNutr(stESTAB, part, cls, TPlantElement.P);
+                        PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.N, liveN - liveN * frac);
+                        PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.P, liveP - liveP * frac);
+
+                        // Dead
+                        double deadDM = PastureModel.GetHerbageMass(stDEAD, part, cls);
+                        double deadRemove = deadDM * frac;
+                        PastureModel.SetHerbageMass(stDEAD, part, cls, deadDM - deadRemove);
+
+                        double deadN = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.N);
+                        double deadP = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.P);
+                        PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.N, deadN - deadN * frac);
+                        PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.P, deadP - deadP * frac);
+                    }
+                }
+
+                return removed;
+
+        }
+
+       
 
         /// <summary>
         /// Store the nutrient from a layer array (kg/ha) in a SoilNutrientDistn

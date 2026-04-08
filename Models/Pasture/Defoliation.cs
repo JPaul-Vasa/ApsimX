@@ -12,6 +12,7 @@ using APSIM.Shared.Utilities;
 using APSIM.Numerics;
 using APSIM.Core;
 using System.Drawing.Text;
+using CommandLine;
 
 namespace Models.GrazPlan
 {   
@@ -36,6 +37,7 @@ namespace Models.GrazPlan
         private const double potentialMEOfHerbage = 16.0;
 
         private List<ZoneWithForage> zones;
+
 
 
          /// <summary>This method is invoked at the beginning of the simulation.</summary>
@@ -128,18 +130,20 @@ namespace Models.GrazPlan
         [Units("MJME/ha")]
         public double GrazedME => zones.Sum(z => z.GrazedME);
 
+         /// <summary>Invoked when a grazing occurs.</summary>
+        public event EventHandler Grazed;
 
         /// <summary>
         /// Graze to residue
         /// </summary>
         /// <param name="residual"></param>
-        public void GrazeToResidual(double residual)
+        public void GrazeToResidual(double residual)                     
         {
             GrazingInterval = DaysSinceGraze;  // i.e. yesterday's value
             DaysSinceGraze = 0;
 
             foreach (var zone in zones)
-                zone.RemoveDMFromPlants(residual, speciesCutProportions);
+                zone.RemoveDMFromPlants(residual, speciesCutProportions);           
 
             ClippingsWtReturned = GrazedDM * FractionClippingsReturned;
             ClippingsNReturned = GrazedN * FractionClippingsReturned;
@@ -155,7 +159,7 @@ namespace Models.GrazPlan
                 ProportionOfTotalDM[i] = zones.Select(z => z.ProportionsToTotal[i]).Average();
 
             summary.WriteMessage(this, string.Format("Grazed {0:0.0} kgDM/ha, N content {1:0.0} kgN/ha, ME {2:0.0} MJME/ha", GrazedDM, GrazedN, GrazedME), MessageType.Diagnostic);
-
+            Grazed?.Invoke(this, new EventArgs());
         }
 
 
@@ -232,7 +236,63 @@ namespace Models.GrazPlan
             }
 
 
-            /// <summary>Remove biomass from the specified forage.</summary>
+            // /// <summary>Remove biomass from the specified forage.</summary>
+            // /// <param name="residual">The residual to cut to (kg/ha).</param>
+            // /// <param name="speciesCutProportions">The proportions to cut each species.</param>
+            // public void RemoveDMFromPlants(double residual, double[] speciesCutProportions)
+            // {
+            //     // This is a simple implementation. It proportionally removes biomass from organs.
+            //     // What about non harvestable biomass?
+            //     // What about PreferenceForGreenOverDead and PreferenceForLeafOverStems?
+            //     double preGrazeDM = forages.Sum(f => f.Material.Sum(m => m.Total.Wt * 10));
+            //     double removeAmount = Math.Max(0, preGrazeDM - residual) / 10; // to g/m2
+
+            //     dmRemovedToday = removeAmount;
+            //     if (MathUtilities.IsGreaterThan(removeAmount, 0.0))
+            //     {
+            //         // Remove a proportion of required DM from each species
+            //         double totalHarvestableWt = 0.0;
+            //         double totalWeightedHarvestableWt = 0.0;
+            //         for (int i = 0; i < forages.Count; i++)
+            //         {
+            //             var harvestableWt = forages[i].Material.Sum(m => m.Consumable.Wt);  // g/m2
+            //             totalHarvestableWt += harvestableWt;
+            //             totalWeightedHarvestableWt += speciesCutProportions[i] * harvestableWt;
+            //         }
+
+            //         // If a fraction consumable was specified in the forages component by the user then the above calculated
+            //         // removeAmount might be > consumable amount. Constrain the removeAmount to the consumable
+            //         // amount so that we don't get an exception thrown in ModelWithDigestibleBiomass.RemoveBiomass method
+            //         removeAmount = Math.Min(removeAmount, totalHarvestableWt);
+
+            //         for (int i = 0; i < forages.Count; i++)
+            //         {
+            //             var harvestableWt = forages[i].Material.Sum(m => m.Consumable.Wt);  // g/m2
+            //             var proportion = harvestableWt * speciesCutProportions[i] / totalWeightedHarvestableWt;
+            //             var amountToRemove = removeAmount * proportion;
+            //             if (MathUtilities.IsGreaterThan(amountToRemove, 0.0))
+            //             {
+            //                 var amountToRemoveKgHa = amountToRemove * 10.0; // g/m2 → kg/ha
+                            
+            //                 var grazed = forages[i].RemoveBiomass(amountToRemove: amountToRemoveKgHa);
+                            
+                            
+
+            //                 double grazedDigestibility = grazed.Digestibility;
+            //                 var grazedMetabolisableEnergy = potentialMEOfHerbage * grazedDigestibility;
+                           
+            //                 grazedDM += grazed.Wt;  // kg/ha
+            //                 grazedN += grazed.N;    // kg/ha
+            //                 grazedME += grazedMetabolisableEnergy * grazed.Wt;
+
+            //                 GrazedForages.Add(grazed);
+            //             }
+            //         }
+            //     }
+            // }
+
+
+             /// <summary>Remove biomass from the specified forage.</summary>
             /// <param name="residual">The residual to cut to (kg/ha).</param>
             /// <param name="speciesCutProportions">The proportions to cut each species.</param>
             public void RemoveDMFromPlants(double residual, double[] speciesCutProportions)
@@ -268,7 +328,13 @@ namespace Models.GrazPlan
                         var amountToRemove = removeAmount * proportion;
                         if (MathUtilities.IsGreaterThan(amountToRemove, 0.0))
                         {
-                            var grazed = forages[i].RemoveBiomass(amountToRemove: amountToRemove);
+                           
+                             var grazed = forages[i].RemoveBiomass(
+                             amountToRemove,
+                             PreferenceForGreenOverDead: 1.0,
+                             PreferenceForLeafOverStems: 1.0,
+                             summary: summary);
+                          
                             double grazedDigestibility = grazed.Digestibility;
                             var grazedMetabolisableEnergy = potentialMEOfHerbage * grazedDigestibility;
 
@@ -281,6 +347,7 @@ namespace Models.GrazPlan
                     }
                 }
             }
+
 
 
                                  
