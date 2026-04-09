@@ -1,6 +1,6 @@
 {
   "$type": "Models.Core.Simulations, Models",
-  "Version": 207,
+  "Version": 213,
   "Name": "Simulations",
   "ResourceName": null,
   "Children": [
@@ -15,7 +15,7 @@
     },
     {
       "$type": "Models.Memo, Models",
-      "Text": "# Pinus Model Notes\r\n\r\n## Plant Modelling Framework\r\n\r\nThe APSIM Pinus model has been developed using the Plant Modelling Framework (PMF) of [brown_plant_2014] within  APSIM Next Generation [holzworth_apsim_2014]. This new framework provides a library of plant organ and process submodels that can be coupled, at runtime, to construct a model in much the same way that models can be coupled to construct a simulation. This means that dynamic composition of lower level processes and organ classes (e.g. photosynthesis, Leaf) into larger constructions (e.g. maize, wheat, Pinus) can be achieved by the model developer without additional coding.\r\n\r\n##Pecularities of Pinus and This Model\r\n\r\nThe Pinus model consists of:\r\n\r\n* a phenology model to simulate development through sequential growth phases  \r\n* a collection of organs to simulate the various plant parts  \r\n* an arbitrator to allocate resources (N, biomass) to the various plant organs  \r\n\r\nThis work builds upon earlier APSIM forest models such as described by [Huthetal2002],[zerger_integrating_2001], [huth_managing_2008], and [smethurst2020generalized].\r\n\r\nPinus is a reasonably straight forward perennial crop to model. This model has been set up for simulation of even-aged plantations (transplanted seedlings) or native forests (also assumed to start the simulation as a transplanted seedling, but in practice it would be sown from naturally distributed seed). Plants grow in accordance with available resources and conditions, which in this version of the model are temperature, radiation, available soil water, and available soil nitrogen. Leaf, branch and roots senesce, remain attached for some time, then detach to produce litter. Above-ground biomass is the main target of production, which is made up of organs that develop from default partitioniing targets that is modified daily due to organ demand. Forest managers also deal with tree size, which are set in the model as a function of aboveground biomass. During model development, we found that Pinus model performance (plant or stand development) was particularly sensitive to Leaf lifespan/longevity, specific Leaf area, dead Leaf detachment, partitioning to roots and shoots, mortality and thinning, and weeds (if present).\r\n\r\nThere are many Pinus genotypes (species, closely related genera, provenances, families, clones, and hybrids) that can behave differently in response to their growing environment. This build of the Pinus model was calbirated on datasets of three species (_P. radiata_, _P. caribaea_, _P. elliottii_) and F1 and F2 hybrids of (_P. caribaea_, _P. elliottii_).  Many of the genotype are poorly described, but some are probably from early-stage domestication, whiole others are the result of several generations of tree breeding. Early genetic material was mostly selected, for example, for states in Australian from provenance that performed adequately in state of interest, and tree breeding programes for several decades were state-run. During more recent decades, company and collaborative breeding programs have provided the genetic material for planting. A summary of domestication and genetic material of planted _P. radiata_ in Australia and New Zealand is provided in [burdon2008achievements], [wu2007successful], and [johnson2008half]. The implications are that genotypic control of physiological traits is poorly defined, requiring the model to be calibrated for assumed rather than measured differences.\n\n\r\n##Including a Pinus crop in an APSIM simulation\r\n\r\nThere will be a Pinus and/or PinusRotation example simulation available by clicking the \"Open an Example\" icon available on the second tab displayed when APSIM Next Gen is opened.  This provides a useful demonstration of how to simulate a Pinus crop and provides some useful graphs for viewing model behaviour and performance.  \r\n\r\nTo include a Pinus crop in a simulation the \"Pinus\" model needs to be added to the paddock, field or zone in which it is to be grown.  This can be done by (a) right clicking on the \"Paddock\", selecting \"Add\" from the drop down menu and then selecting \"Pinus\" from the list that comes up, or (b) dragging or copying and pasting the model up from the standard toolbox or an example.  A TreeSowing rule or TreeManagement rule needs to be set up to start the crop off. \r\n\r\nThis document provides a description of the model, describes the validation and test datasets, and model performance.\n\nMajor Eucalyptus model developments:\n\n2020-2021\n\n• Copied the Eucalyptus model and modified it to fit the observed Pinus datasets. The Eucalyptus and Pinus models were expanded (beyond the original Eucaluptus model in APSIM Next Generation) to include an expansion of stem metrics beyond just diameter at breast height (DBH, cm), height (m), and overbark stem volume (Vol, m3/ha). New stem metrics include underbark parameters of stem volume (Volub) and wood density, and basal area (BA, m2/ha) the mean annual increment of overbark and underbark volumes (m3/ha/year).This required partitioning of stem biomass into bark and wood, calculation of bark thickness, and an estimation of volumes overbark and underbark. All stem metrics are empricially calculated rather than process-based. These metrics are known to be\thighly effected by stem taper, bark thickness and wood density, which in-turn are highly influenced by site, genetics and management. Few data are available on wood density (underbark, whole tree), so it is included here only as a check that underlying calculations are sensible. Validations of these metrics are included. \n\nSuggested future developments:\n\n1. Make SLA a function of stress level\n2. Create a set of functional weeds specifically for use with these forestry models, e.g. N-fixing/non-N-fixing X herbaceous/shrub/tree X tropical/sub-tropical/temperate\n3. Self-thinning rule or process-based mortality\n4. Improve effects of stocking, if necessary. Leaf allocation as a function of aboveground.wt (g/m2) rather than individual tree weight (g/tree) has been included, but further checking of this is required to see if that is all that is needed for a wide range of stockings. Allocation patterns might need to be explicitly related to population.\n5. Waterlogging – I (Philip) would have thought it was important, particularly for some euc and pine genotypes, but so far I haven’t run into a really need for it amongst our current observed datasets.\n6. Soil P (and K) and fertiliser responses\n7. Pruning, thinning and various otehr effects on knot-free wood and other wood quality measures\n8. Geo-locate and interact adjacent plots for predicting area-based metrics like run-on (above- and below-ground), stream flow and wood production\n9. Tree and log size class distributions\n10. Development of outputs for greenhouse accounting (water use, C sequestration, greenhouse gases, biodiversity idiexes)\n \n\n\r\n\r\n\r\n",
+      "Text": "# Pinus Model Notes\r\n\r\n## Plant Modelling Framework\r\n\r\nThe APSIM Pinus model has been developed using the Plant Modelling Framework (PMF) of [#brown_plant_2014] within  APSIM Next Generation [#holzworth_apsim_2014]. This new framework provides a library of plant organ and process submodels that can be coupled, at runtime, to construct a model in much the same way that models can be coupled to construct a simulation. This means that dynamic composition of lower level processes and organ classes (e.g. photosynthesis, Leaf) into larger constructions (e.g. maize, wheat, Pinus) can be achieved by the model developer without additional coding.\r\n\r\n##Pecularities of Pinus and This Model\r\n\r\nThe Pinus model consists of:\r\n\r\n* a phenology model to simulate development through sequential growth phases  \r\n* a collection of organs to simulate the various plant parts  \r\n* an arbitrator to allocate resources (N, biomass) to the various plant organs  \r\n\r\nThis work builds upon earlier APSIM forest models such as described by [#Huthetal2002],[#zerger_integrating_2001], [#huth_managing_2008], and [#smethurst2020generalized].\r\n\r\nPinus is a reasonably straight forward perennial crop to model. This model has been set up for simulation of even-aged plantations (transplanted seedlings) or native forests (also assumed to start the simulation as a transplanted seedling, but in practice it would be sown from naturally distributed seed). Plants grow in accordance with available resources and conditions, which in this version of the model are temperature, radiation, available soil water, and available soil nitrogen. Leaf, branch and roots senesce, remain attached for some time, then detach to produce litter. Above-ground biomass is the main target of production, which is made up of organs that develop from default partitioniing targets that is modified daily due to organ demand. Forest managers also deal with tree size, which are set in the model as a function of aboveground biomass. During model development, we found that Pinus model performance (plant or stand development) was particularly sensitive to Leaf lifespan/longevity, specific Leaf area, dead Leaf detachment, partitioning to roots and shoots, mortality and thinning, and weeds (if present).\r\n\r\nThere are many Pinus genotypes (species, closely related genera, provenances, families, clones, and hybrids) that can behave differently in response to their growing environment. This build of the Pinus model was calbirated on datasets of three species (_P. radiata_, _P. caribaea_, _P. elliottii_) and F1 and F2 hybrids of (_P. caribaea_, _P. elliottii_).  Many of the genotype are poorly described, but some are probably from early-stage domestication, whiole others are the result of several generations of tree breeding. Early genetic material was mostly selected, for example, for states in Australian from provenance that performed adequately in state of interest, and tree breeding programes for several decades were state-run. During more recent decades, company and collaborative breeding programs have provided the genetic material for planting. A summary of domestication and genetic material of planted _P. radiata_ in Australia and New Zealand is provided in [#burdon2008achievements], [#wu2007successful], and [#johnson2008half]. The implications are that genotypic control of physiological traits is poorly defined, requiring the model to be calibrated for assumed rather than measured differences.\n\n\r\n##Including a Pinus crop in an APSIM simulation\r\n\r\nThere will be a Pinus and/or PinusRotation example simulation available by clicking the \"Open an Example\" icon available on the second tab displayed when APSIM Next Gen is opened.  This provides a useful demonstration of how to simulate a Pinus crop and provides some useful graphs for viewing model behaviour and performance.  \r\n\r\nTo include a Pinus crop in a simulation the \"Pinus\" model needs to be added to the paddock, field or zone in which it is to be grown.  This can be done by (a) right clicking on the \"Paddock\", selecting \"Add\" from the drop down menu and then selecting \"Pinus\" from the list that comes up, or (b) dragging or copying and pasting the model up from the standard toolbox or an example.  A TreeSowing rule or TreeManagement rule needs to be set up to start the crop off. \r\n\r\nThis document provides a description of the model, describes the validation and test datasets, and model performance.\n\nMajor Eucalyptus model developments:\n\n2020-2021\n\n• Copied the Eucalyptus model and modified it to fit the observed Pinus datasets. The Eucalyptus and Pinus models were expanded (beyond the original Eucaluptus model in APSIM Next Generation) to include an expansion of stem metrics beyond just diameter at breast height (DBH, cm), height (m), and overbark stem volume (Vol, m3/ha). New stem metrics include underbark parameters of stem volume (Volub) and wood density, and basal area (BA, m2/ha) the mean annual increment of overbark and underbark volumes (m3/ha/year).This required partitioning of stem biomass into bark and wood, calculation of bark thickness, and an estimation of volumes overbark and underbark. All stem metrics are empricially calculated rather than process-based. These metrics are known to be\thighly effected by stem taper, bark thickness and wood density, which in-turn are highly influenced by site, genetics and management. Few data are available on wood density (underbark, whole tree), so it is included here only as a check that underlying calculations are sensible. Validations of these metrics are included. \n\nSuggested future developments:\n\n1. Make SLA a function of stress level\n2. Create a set of functional weeds specifically for use with these forestry models, e.g. N-fixing/non-N-fixing X herbaceous/shrub/tree X tropical/sub-tropical/temperate\n3. Self-thinning rule or process-based mortality\n4. Improve effects of stocking, if necessary. Leaf allocation as a function of aboveground.wt (g/m2) rather than individual tree weight (g/tree) has been included, but further checking of this is required to see if that is all that is needed for a wide range of stockings. Allocation patterns might need to be explicitly related to population.\n5. Waterlogging – I (Philip) would have thought it was important, particularly for some euc and pine genotypes, but so far I haven’t run into a really need for it amongst our current observed datasets.\n6. Soil P (and K) and fertiliser responses\n7. Pruning, thinning and various otehr effects on knot-free wood and other wood quality measures\n8. Geo-locate and interact adjacent plots for predicting area-based metrics like run-on (above- and below-ground), stream flow and wood production\n9. Tree and log size class distributions\n10. Development of outputs for greenhouse accounting (water use, C sequestration, greenhouse gases, biodiversity idiexes)\n \n\n\r\n\r\n\r\n",
       "Name": "Introduction",
       "ResourceName": null,
       "Children": [],
@@ -56,6 +56,7 @@
             "[Pinus].CoarseRoot.Live.Wt",
             "[Pinus].FineRoot.Live.NConc",
             "[Pinus].Leaf.Live.N*10 as LiveFoliarN",
+            "[Pinus].Leaf.N",
             "[Pinus].Leaf.N*10 as TotalFoliarN",
             "[Pinus].Leaf.CoverGreen",
             "[Pinus].Leaf.SpecificLeafArea",
@@ -1765,7 +1766,7 @@
               "Children": [
                 {
                   "$type": "Models.Memo, Models",
-                  "Text": "These data are for an experiment with fertilizer, irrigation and fertigation treatments established in a 10-year-old _P. radiata_ plantation near Canberra, Australia. The experiment was officially entitled Biology of Forest Growth (BFG) as if focused on improving the physiogical understanding of  growth of this species in a somewhat common Australian environment. \r\n\nNumerous publications about this experiment reported on its management, tree growth, biomass components, phenology, climate, and soils. Many of these publications were produced in a special issue of Forest Ecology and Management (Volume 52, Issues 1–4, September 1992) several from which data have been sourced for developing the APSIM Pimus model: [benson1992biology], [benson1992dynamics], [crane1992accumulation], [cremer1992relations], [khanna1992effects], [kirschbaum1999cenw], [mcmurtrie1992using], [myers1992site], [raison1992biology], [raison1992dynamicsI], [raison1992dynamicsII], [raison1990effects], and [snowdon1992effects]. A later thesis [pongracic2001influence] and paper [waterworth2007effects] also provided data. Many of these data and addition data were also provided by Keryn Paul (CSIRO), which we greatly apprecaited.\n\n",
+                  "Text": "These data are for an experiment with fertilizer, irrigation and fertigation treatments established in a 10-year-old _P. radiata_ plantation near Canberra, Australia. The experiment was officially entitled Biology of Forest Growth (BFG) as if focused on improving the physiogical understanding of  growth of this species in a somewhat common Australian environment. \r\n\nNumerous publications about this experiment reported on its management, tree growth, biomass components, phenology, climate, and soils. Many of these publications were produced in a special issue of Forest Ecology and Management (Volume 52, Issues 1–4, September 1992) several from which data have been sourced for developing the APSIM Pimus model: [#benson1992biology], [#benson1992dynamics], [#crane1992accumulation], [#cremer1992relations], [#khanna1992effects], [#kirschbaum1999cenw], [#mcmurtrie1992using], [#myers1992site], [#raison1992biology], [#raison1992dynamicsI], [#raison1992dynamicsII], [#raison1990effects], and [#snowdon1992effects]. A later thesis [#pongracic2001influence] and paper [#waterworth2007effects] also provided data. Many of these data and addition data were also provided by Keryn Paul (CSIRO), which we greatly apprecaited.\n\n",
                   "Name": "Memo",
                   "ResourceName": null,
                   "Children": [],
@@ -2857,6 +2858,7 @@
                                   "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                   "Thickness": null,
                                   "InitialValues": null,
+                                  "InteractionsPerDay": 8,
                                   "Name": "CERESSoilTemperature",
                                   "ResourceName": null,
                                   "Children": [],
@@ -8884,6 +8886,7 @@
                               "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                               "Thickness": null,
                               "InitialValues": null,
+                              "InteractionsPerDay": 8,
                               "Name": "CERESSoilTemperature",
                               "ResourceName": null,
                               "Children": [],
@@ -15915,6 +15918,7 @@
                               "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                               "Thickness": null,
                               "InitialValues": null,
+                              "InteractionsPerDay": 8,
                               "Name": "Temperature",
                               "ResourceName": null,
                               "Children": [],
@@ -21049,7 +21053,7 @@
               "Children": [
                 {
                   "$type": "Models.Memo, Models",
-                  "Text": "These data are from one plot at a highly productive site in New Zealand. Studies at the site included physiology and growth, nutrition, soils and hydrology, which were published. This site was of particular interest for this validation because it had high nutrient availability and high rainfall, and it was well-published. Publications drawn on were [rijkse1974soils], [beets1987puruki], [beets1987uptake], [beets1987specific], [beets1987accumulation], [dyck1987nitrogen], [beets1996carbon], [parfitt_nitrogen_2006], [kimberley2007national], [oliver2004variation], [beets2007root], [beets2011planted], [beets2018carbon], Beets et al (2018 Puruki field trip - a productive ex-pasture site DOI:10.13140/RG.2.2.16726.50243), [garrett2019national], and [beets2020soil].\n\n\n",
+                  "Text": "These data are from one plot at a highly productive site in New Zealand. Studies at the site included physiology and growth, nutrition, soils and hydrology, which were published. This site was of particular interest for this validation because it had high nutrient availability and high rainfall, and it was well-published. Publications drawn on were [#rijkse1974soils], [#beets1987puruki], [#beets1987uptake], [#beets1987specific], [#beets1987accumulation], [#dyck1987nitrogen], [#beets1996carbon], [#parfitt_nitrogen_2006], [#kimberley2007national], [#oliver2004variation], [#beets2007root], [#beets2011planted], [#beets2018carbon], Beets et al (2018 Puruki field trip - a productive ex-pasture site DOI:10.13140/RG.2.2.16726.50243), [#garrett2019national], and [#beets2020soil].\n\n\n",
                   "Name": "Memo",
                   "ResourceName": null,
                   "Children": [],
@@ -21889,6 +21893,7 @@
                                   "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                   "Thickness": null,
                                   "InitialValues": null,
+                                  "InteractionsPerDay": 8,
                                   "Name": "CERESSoilTemperature",
                                   "ResourceName": null,
                                   "Children": [],
@@ -27327,7 +27332,7 @@
               "Children": [
                 {
                   "$type": "Models.Memo, Models",
-                  "Text": "These data are from an experiment with ferilizer on very shallow soils with moderate rainfall. Substantial rates of accumulated N applications changed the C-N dynamics of the site and stand growth. Data were reported in [neilsen1992growth]  and [neilsen1998implications], and some details were checked in the original files with permission of the current manager of the site (Sustainable Timber Tasmania).\n\n\n",
+                  "Text": "These data are from an experiment with ferilizer on very shallow soils with moderate rainfall. Substantial rates of accumulated N applications changed the C-N dynamics of the site and stand growth. Data were reported in [#neilsen1992growth]  and [#neilsen1998implications], and some details were checked in the original files with permission of the current manager of the site (Sustainable Timber Tasmania).\n\n\n",
                   "Name": "Memo",
                   "ResourceName": null,
                   "Children": [],
@@ -28082,6 +28087,7 @@
                                   "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                   "Thickness": null,
                                   "InitialValues": null,
+                                  "InteractionsPerDay": 8,
                                   "Name": "CERESSoilTemperature",
                                   "ResourceName": null,
                                   "Children": [],
@@ -33470,7 +33476,7 @@
               "Children": [
                 {
                   "$type": "Models.Memo, Models",
-                  "Text": "These are the Australian sites of the Tropical and SubTropical datasets.\n\nData come from sites of Forestry Plantations Queensland (FPQ; [dieters2007productivity]) and Hancocks Queensland Plantations (HQP). \n\n\n",
+                  "Text": "These are the Australian sites of the Tropical and SubTropical datasets.\n\nData come from sites of Forestry Plantations Queensland (FPQ; [#dieters2007productivity]) and Hancocks Queensland Plantations (HQP). \n\n\n",
                   "Name": "Memo",
                   "ResourceName": null,
                   "Children": [],
@@ -33485,7 +33491,7 @@
                   "Children": [
                     {
                       "$type": "Models.Memo, Models",
-                      "Text": "These data are from a genetics experiment in south-east Queensland described by [dieters2007productivity]. Four genotypes are compared: _P. elliottii_ var. elliottii (PEE), _P. caribaea_ var. hondurensis (PCH), the F1 hybrid, and the F2 hybrid. As only stem metrics were provided in the paper, genotypes were not calibrated for biomass components and other physiological attributes. \n\n\n",
+                      "Text": "These data are from a genetics experiment in south-east Queensland described by [#dieters2007productivity]. Four genotypes are compared: _P. elliottii_ var. elliottii (PEE), _P. caribaea_ var. hondurensis (PCH), the F1 hybrid, and the F2 hybrid. As only stem metrics were provided in the paper, genotypes were not calibrated for biomass components and other physiological attributes. \n\n\n",
                       "Name": "Memo",
                       "ResourceName": null,
                       "Children": [],
@@ -34598,6 +34604,7 @@
                                       "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                       "Thickness": null,
                                       "InitialValues": null,
+                                      "InteractionsPerDay": 8,
                                       "Name": "CERESSoilTemperature",
                                       "ResourceName": null,
                                       "Children": [],
@@ -39674,7 +39681,7 @@
                   "Children": [
                     {
                       "$type": "Models.Memo, Models",
-                      "Text": "These data are from a genetics experiment in south-east Queensland described by [dieters2007productivity]. Four genotypes are compared: _P. elliottii_ var. elliottii (PEE), _P. caribaea_ var. hondurensis (PCH), the F1 hybrid, and the F2 hybrid. As only stem metrics were provided in the paper, genotypes were not calibrated for biomass components and other physiological attributes. \n\n\n",
+                      "Text": "These data are from a genetics experiment in south-east Queensland described by [#dieters2007productivity]. Four genotypes are compared: _P. elliottii_ var. elliottii (PEE), _P. caribaea_ var. hondurensis (PCH), the F1 hybrid, and the F2 hybrid. As only stem metrics were provided in the paper, genotypes were not calibrated for biomass components and other physiological attributes. \n\n\n",
                       "Name": "Memo",
                       "ResourceName": null,
                       "Children": [],
@@ -40796,6 +40803,7 @@
                                       "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                       "Thickness": null,
                                       "InitialValues": null,
+                                      "InteractionsPerDay": 8,
                                       "Name": "CERESSoilTemperature",
                                       "ResourceName": null,
                                       "Children": [],
@@ -45907,7 +45915,7 @@
                   "Children": [
                     {
                       "$type": "Models.Memo, Models",
-                      "Text": "These data are from a genetics experiment in south-east Queensland described by [dieters2007productivity]. Four genotypes are compared: _P. elliottii_ var. elliottii (PEE), _P. caribaea_ var. hondurensis (PCH), the F1 hybrid, and the F2 hybrid. As only stem metrics were provided in the paper, genotypes were not calibrated for biomass components and other physiological attributes. \n\n\n",
+                      "Text": "These data are from a genetics experiment in south-east Queensland described by [#dieters2007productivity]. Four genotypes are compared: _P. elliottii_ var. elliottii (PEE), _P. caribaea_ var. hondurensis (PCH), the F1 hybrid, and the F2 hybrid. As only stem metrics were provided in the paper, genotypes were not calibrated for biomass components and other physiological attributes. \n\n\n",
                       "Name": "Memo",
                       "ResourceName": null,
                       "Children": [],
@@ -47029,6 +47037,7 @@
                                       "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                       "Thickness": null,
                                       "InitialValues": null,
+                                      "InteractionsPerDay": 8,
                                       "Name": "CERESSoilTemperature",
                                       "ResourceName": null,
                                       "Children": [],
@@ -52604,6 +52613,7 @@
                                   "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                   "Thickness": null,
                                   "InitialValues": null,
+                                  "InteractionsPerDay": 8,
                                   "Name": "CERESSoilTemperature",
                                   "ResourceName": null,
                                   "Children": [],
@@ -58096,6 +58106,7 @@
                                   "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                   "Thickness": null,
                                   "InitialValues": null,
+                                  "InteractionsPerDay": 8,
                                   "Name": "CERESSoilTemperature",
                                   "ResourceName": null,
                                   "Children": [],
@@ -63067,7 +63078,7 @@
                   "Children": [
                     {
                       "$type": "Models.Memo, Models",
-                      "Text": "These data were kindly provided by Hancock Queensland Plantations (HQPlantations) from Experiment 321GYM, which was established to:(1) examine the impacts of slash management, fertilization and cover crops on tree growth and nutrient status; (2) quantify the effects on soil properties; and (3) contribute to the CIFOR international network of long term experiments designed to identify and develop sustainable inter-rotation management practices. Early results were reported in [simpson2000effects]. Data here are reported only for the first rotation (1R) to age 29.4 years.\n\n\n\n",
+                      "Text": "These data were kindly provided by Hancock Queensland Plantations (HQPlantations) from Experiment 321GYM, which was established to:(1) examine the impacts of slash management, fertilization and cover crops on tree growth and nutrient status; (2) quantify the effects on soil properties; and (3) contribute to the CIFOR international network of long term experiments designed to identify and develop sustainable inter-rotation management practices. Early results were reported in [#simpson2000effects]. Data here are reported only for the first rotation (1R) to age 29.4 years.\n\n\n\n",
                       "Name": "Memo",
                       "ResourceName": null,
                       "Children": [],
@@ -63595,6 +63606,7 @@
                                   "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                   "Thickness": null,
                                   "InitialValues": null,
+                                  "InteractionsPerDay": 8,
                                   "Name": "CERESSoilTemperature",
                                   "ResourceName": null,
                                   "Children": [],
@@ -68559,7 +68571,7 @@
                   "Children": [
                     {
                       "$type": "Models.Memo, Models",
-                      "Text": "These data were kindly provided by Hancock Queensland Plantations (HQPlantations) from Experiment 321GYM, which was established to:(1) examine the impacts of slash management, fertilization and cover crops on tree growth and nutrient status; (2) quantify the effects on soil properties; and (3) contribute to the CIFOR international network of long term experiments designed to identify and develop sustainable inter-rotation management practices. Early results were reported in [simpson2000effects]. Data here are reported only for one of the best performing treatments of the second rotation (2R) to age 8 years (Experiment 321GYM, Treatement BL2-TWC). \n\n\n",
+                      "Text": "These data were kindly provided by Hancock Queensland Plantations (HQPlantations) from Experiment 321GYM, which was established to:(1) examine the impacts of slash management, fertilization and cover crops on tree growth and nutrient status; (2) quantify the effects on soil properties; and (3) contribute to the CIFOR international network of long term experiments designed to identify and develop sustainable inter-rotation management practices. Early results were reported in [#simpson2000effects]. Data here are reported only for one of the best performing treatments of the second rotation (2R) to age 8 years (Experiment 321GYM, Treatement BL2-TWC). \n\n\n",
                       "Name": "Memo",
                       "ResourceName": null,
                       "Children": [],
@@ -69087,6 +69099,7 @@
                                   "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                   "Thickness": null,
                                   "InitialValues": null,
+                                  "InteractionsPerDay": 8,
                                   "Name": "CERESSoilTemperature",
                                   "ResourceName": null,
                                   "Children": [],
@@ -74586,6 +74599,7 @@
                                   "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                   "Thickness": null,
                                   "InitialValues": null,
+                                  "InteractionsPerDay": 8,
                                   "Name": "CERESSoilTemperature",
                                   "ResourceName": null,
                                   "Children": [],
@@ -80023,7 +80037,7 @@
                   "Children": [
                     {
                       "$type": "Models.Memo, Models",
-                      "Text": "These data are from an experiment with ferilizer and herbicide treatments and both _P. taeda_ and P.elliottii_ near Gainesville, north-central Florida, USA. As nutrients other than N were probably limiting in some treatments, which the the model couold not be expected to simulate, only the high input treatment was simualted.  \r\n\nNumerous publications report on this experiment: [jokela2000effects], [vogel2011long], [martin2004developmental], [gonzalez2012modeling], [jokela2010twenty], [subedi2019sustained], [jokela2004production], and [gonzalez2016regional]. A consolidated dataset was kindly provided by Eric Jokela and Jason Vogel, University of Florida.\n\n\n",
+                      "Text": "These data are from an experiment with ferilizer and herbicide treatments and both _P. taeda_ and P.elliottii_ near Gainesville, north-central Florida, USA. As nutrients other than N were probably limiting in some treatments, which the the model couold not be expected to simulate, only the high input treatment was simualted.  \r\n\nNumerous publications report on this experiment: [#jokela2000effects], [#vogel2011long], [#martin2004developmental], [#gonzalez2012modeling], [#jokela2010twenty], [#subedi2019sustained], [#jokela2004production], and [#gonzalez2016regional]. A consolidated dataset was kindly provided by Eric Jokela and Jason Vogel, University of Florida.\n\n\n",
                       "Name": "Memo",
                       "ResourceName": null,
                       "Children": [],
@@ -81141,6 +81155,7 @@
                                       "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                       "Thickness": null,
                                       "InitialValues": null,
+                                      "InteractionsPerDay": 8,
                                       "Name": "CERESSoilTemperature",
                                       "ResourceName": null,
                                       "Children": [],
@@ -86114,7 +86129,7 @@
                   "Children": [
                     {
                       "$type": "Models.Memo, Models",
-                      "Text": "These data are from an experiment of 2x nutrient and water treatments in _P. taeda_ near Sandhills, North Carolina, USA. As nutrients other than N were probably limiting in some treatments, which the the model couold not be expected to simulate, only the high input treatment was simualted.  \r\n\nNumerous publications report on this experiment, of which we drew on [zhao2016maximum], [landsberg2001applying], [albaugh2009opportunities], [albaugh2004long], and [albaugh1998leaf].\n\n\n",
+                      "Text": "These data are from an experiment of 2x nutrient and water treatments in _P. taeda_ near Sandhills, North Carolina, USA. As nutrients other than N were probably limiting in some treatments, which the the model couold not be expected to simulate, only the high input treatment was simualted.  \r\n\nNumerous publications report on this experiment, of which we drew on [#zhao2016maximum], [#landsberg2001applying], [#albaugh2009opportunities], [#albaugh2004long], and [#albaugh1998leaf].\n\n\n",
                       "Name": "Memo",
                       "ResourceName": null,
                       "Children": [],
@@ -87289,6 +87304,7 @@
                                       "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                       "Thickness": null,
                                       "InitialValues": null,
+                                      "InteractionsPerDay": 8,
                                       "Name": "CERESSoilTemperature",
                                       "ResourceName": null,
                                       "Children": [],
@@ -92497,7 +92513,7 @@
           "Children": [
             {
               "$type": "Models.Memo, Models",
-              "Text": "Representative growth rates (MAI) for _P. radiata_ in temperate Australia are up to 30 m3/ha/year of stem wood volume overbark, or more where accessing an aquifer or receiving irrigation. Simulations for 4 sites are presented here to capture a range of environmental conditions.  Climate data has been taken from nearby towns and common soil properties have been used for all sites, with soil properties reflecting a relatively high state of fertility. The peak MAI values for these simulations are 13-29 m3/ha/year at 26 years, i.e. within the range of expectations [turvey1983soil], and the relativities in relation to rainfall and temperature are also as expected. Rainfall is explored explicitly for the Mount Worth site in the next sensibility test.   \r\n\r\n\n",
+              "Text": "Representative growth rates (MAI) for _P. radiata_ in temperate Australia are up to 30 m3/ha/year of stem wood volume overbark, or more where accessing an aquifer or receiving irrigation. Simulations for 4 sites are presented here to capture a range of environmental conditions.  Climate data has been taken from nearby towns and common soil properties have been used for all sites, with soil properties reflecting a relatively high state of fertility. The peak MAI values for these simulations are 13-29 m3/ha/year at 26 years, i.e. within the range of expectations [#turvey1983soil], and the relativities in relation to rainfall and temperature are also as expected. Rainfall is explored explicitly for the Mount Worth site in the next sensibility test.   \r\n\r\n\n",
               "Name": "Memo",
               "ResourceName": null,
               "Children": [],
@@ -93093,6 +93109,7 @@
                           "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                           "Thickness": null,
                           "InitialValues": null,
+                          "InteractionsPerDay": 8,
                           "Name": "Temperature",
                           "ResourceName": null,
                           "Children": [],
@@ -93842,6 +93859,7 @@
                           "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                           "Thickness": null,
                           "InitialValues": null,
+                          "InteractionsPerDay": 8,
                           "Name": "Temperature",
                           "ResourceName": null,
                           "Children": [],
@@ -94591,6 +94609,7 @@
                           "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                           "Thickness": null,
                           "InitialValues": null,
+                          "InteractionsPerDay": 8,
                           "Name": "Temperature",
                           "ResourceName": null,
                           "Children": [],
@@ -95340,6 +95359,7 @@
                           "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                           "Thickness": null,
                           "InitialValues": null,
+                          "InteractionsPerDay": 8,
                           "Name": "Temperature",
                           "ResourceName": null,
                           "Children": [],
@@ -95580,7 +95600,7 @@
           "Children": [
             {
               "$type": "Models.Memo, Models",
-              "Text": "LAI and MAI of _P. radiata_ should increase with rainfall. This simulation experiment explores the changes in LAI and MAI with a hypothetical rainfall gradient created for the Mount Worth site (fertile soil and mean annual rainfall 1131 mm) above by multiplying daily rainfall by factors in the range 0.3-1.8, i.e. annual rainfall of 339-2036 mm.  Data from [specht1972water] show that canopy cover should be almost complete for the wetter sites in this study, and decrease to approximately 50% at the drier sites, which is approxiamtely simulated here.\r\n\r\n",
+              "Text": "LAI and MAI of _P. radiata_ should increase with rainfall. This simulation experiment explores the changes in LAI and MAI with a hypothetical rainfall gradient created for the Mount Worth site (fertile soil and mean annual rainfall 1131 mm) above by multiplying daily rainfall by factors in the range 0.3-1.8, i.e. annual rainfall of 339-2036 mm.  Data from [#specht1972water] show that canopy cover should be almost complete for the wetter sites in this study, and decrease to approximately 50% at the drier sites, which is approxiamtely simulated here.\r\n\r\n",
               "Name": "Memo",
               "ResourceName": null,
               "Children": [],
@@ -96298,6 +96318,7 @@
                               "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                               "Thickness": null,
                               "InitialValues": null,
+                              "InteractionsPerDay": 8,
                               "Name": "Temperature",
                               "ResourceName": null,
                               "Children": [],
@@ -97588,6 +97609,7 @@
                               "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                               "Thickness": null,
                               "InitialValues": null,
+                              "InteractionsPerDay": 8,
                               "Name": "Temperature",
                               "ResourceName": null,
                               "Children": [],
@@ -98589,6 +98611,7 @@
                               "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                               "Thickness": null,
                               "InitialValues": null,
+                              "InteractionsPerDay": 8,
                               "Name": "Temperature",
                               "ResourceName": null,
                               "Children": [],
@@ -99318,7 +99341,7 @@
           "Children": [
             {
               "$type": "Models.Memo, Models",
-              "Text": "These graphs show the simulated yields (MAI) of all genotypes in the model grown for 26 years at northern and southern contrasting sites in Australia (Toolara and TowerHill). There is a tendency for Australian genotypes of _P. radiata_ (TowerHill and BFG) to grow best in southern Australia, as expected, and conersely Australian tropical and sub-tropical genotypes (e.g. elliottiiXcaribaeaF1) to grow best in northern Australia. The New Zealand genotype (GF7) was simulated to grow best in the long-term at both locations, and the USA genotypes were worst. A wide ranage of yield potentials and patterns are therefore available. \n\nAlthough the MAI values are generally as expected for all genotypes of _P. radaita_ [turvey1983soil] and others, this analysis raises some questions that could help focus further model improvements. \n\nCalibration of the model focussed on Australian datasets. \n\nThe elliottiiIMPAC and taedaIMPAC genotypes simulate noticably reduced preformace at later ages. This is probably a consequence of simulations at the IMPAC site in Florida only going to 18 years of age for calibration, as thereafter stocking (and probably vigour of survivors) decreased considerably due to disease, which could not be simulated.\n\nCalibration of the GF7 genotype of _P. radiata_ for the Puruki site in New Zealand went only 12 years of age as stocking thereafter went to very low values which was not a focus of the calibrations needed for Australia. If such low stocking values need to be calibrated for in future, one might need to explore biomass allocation a function stocking (population) to attain better model skill in these circumstances.\n\nSeveral Australian genotypes performed similarly during simulations, indicating little practical difference in their calibration and therefore scope for merging, e.g. the elliottiiXcaribaeaF1 and elliottiiXcaribaeaF2 genotypes. \n\nOne would expect more discrimination than simulated between temperate and other genotypes when simulating growth at these northern and southern extremes of commercial plantations in Australia. To achieve that though model capability might be need for disease occurance and impacts on survival and growth, which beyond the current scope of validation.  \n\nNote that due to the long-term nature of plantation forestry, observed datasets are necessarily old and probably using out-dated genotypes. Therefore, using the genotypes curently available in the model might not be appropriate for simulating the performance of current or future plantations.       \n\n\n",
+              "Text": "These graphs show the simulated yields (MAI) of all genotypes in the model grown for 26 years at northern and southern contrasting sites in Australia (Toolara and TowerHill). There is a tendency for Australian genotypes of _P. radiata_ (TowerHill and BFG) to grow best in southern Australia, as expected, and conersely Australian tropical and sub-tropical genotypes (e.g. elliottiiXcaribaeaF1) to grow best in northern Australia. The New Zealand genotype (GF7) was simulated to grow best in the long-term at both locations, and the USA genotypes were worst. A wide ranage of yield potentials and patterns are therefore available. \n\nAlthough the MAI values are generally as expected for all genotypes of _P. radaita_ [#turvey1983soil] and others, this analysis raises some questions that could help focus further model improvements. \n\nCalibration of the model focussed on Australian datasets. \n\nThe elliottiiIMPAC and taedaIMPAC genotypes simulate noticably reduced preformace at later ages. This is probably a consequence of simulations at the IMPAC site in Florida only going to 18 years of age for calibration, as thereafter stocking (and probably vigour of survivors) decreased considerably due to disease, which could not be simulated.\n\nCalibration of the GF7 genotype of _P. radiata_ for the Puruki site in New Zealand went only 12 years of age as stocking thereafter went to very low values which was not a focus of the calibrations needed for Australia. If such low stocking values need to be calibrated for in future, one might need to explore biomass allocation a function stocking (population) to attain better model skill in these circumstances.\n\nSeveral Australian genotypes performed similarly during simulations, indicating little practical difference in their calibration and therefore scope for merging, e.g. the elliottiiXcaribaeaF1 and elliottiiXcaribaeaF2 genotypes. \n\nOne would expect more discrimination than simulated between temperate and other genotypes when simulating growth at these northern and southern extremes of commercial plantations in Australia. To achieve that though model capability might be need for disease occurance and impacts on survival and growth, which beyond the current scope of validation.  \n\nNote that due to the long-term nature of plantation forestry, observed datasets are necessarily old and probably using out-dated genotypes. Therefore, using the genotypes curently available in the model might not be appropriate for simulating the performance of current or future plantations.       \n\n\n",
               "Name": "Memo",
               "ResourceName": null,
               "Children": [],
@@ -99836,6 +99859,7 @@
                                       "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                       "Thickness": null,
                                       "InitialValues": null,
+                                      "InteractionsPerDay": 8,
                                       "Name": "Temperature",
                                       "ResourceName": null,
                                       "Children": [],
@@ -100339,6 +100363,7 @@
                                       "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                                       "Thickness": null,
                                       "InitialValues": null,
+                                      "InteractionsPerDay": 8,
                                       "Name": "Temperature",
                                       "ResourceName": null,
                                       "Children": [],
@@ -101061,6 +101086,7 @@
                               "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                               "Thickness": null,
                               "InitialValues": null,
+                              "InteractionsPerDay": 8,
                               "Name": "Temperature",
                               "ResourceName": null,
                               "Children": [],
