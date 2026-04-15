@@ -1,6 +1,6 @@
 {
   "$type": "Models.Core.Simulations, Models",
-  "Version": 210,
+  "Version": 213,
   "Name": "Simulations",
   "ResourceName": null,
   "Children": [
@@ -596,6 +596,7 @@
                   "$type": "Models.Soils.SoilTemp.SoilTemperature, Models",
                   "Thickness": null,
                   "InitialValues": null,
+                  "InteractionsPerDay": 8,
                   "Name": "SoilTemperatureCampbell",
                   "ResourceName": null,
                   "Children": [],

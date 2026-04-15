@@ -34,7 +34,7 @@ namespace Models.GrazPlan.Organs
     [PresenterName("UserInterface.Presenters.PropertyPresenter")]
     [ValidParent(ParentType = typeof(Pasture))]
     
-    public class GenericOrgan: Model,IStructureDependency,IBiomass,IHasDamageableBiomass,IOrganDamage
+    public class GenericOrgan: Model,IStructureDependency,IBiomass,IOrganDamage
     {   
         /// <summary>Structure instance supplied by APSIM.core.</summary>
         [field: NonSerialized]
@@ -337,97 +337,97 @@ namespace Models.GrazPlan.Organs
         } 
          
 
-        /// <summary>Gets the biomass detached (sent to soil/surface organic matter)</summary>
-        [JsonIgnore]
-        public PMF.Biomass Detached { get; private set; }
+        // /// <summary>Gets the biomass detached (sent to soil/surface organic matter)</summary>
+        // [JsonIgnore]
+        // public PMF.Biomass Detached { get; private set; }
 
-        /// <summary>Gets the biomass removed from the system (harvested, grazed, etc.)</summary>
-        [JsonIgnore]
-        public PMF.Biomass Removed { get; private set; }
-
-
-         /// <summary>Remove biomass from organ.</summary>
-        /// <param name="liveToRemove">Fraction of live biomass to remove from simulation (0-1).</param>
-        /// <param name="deadToRemove">Fraction of dead biomass to remove from simulation (0-1).</param>
-        /// <param name="liveToResidue">Fraction of live biomass to remove and send to residue pool(0-1).</param>
-        /// <param name="deadToResidue">Fraction of dead biomass to remove and send to residue pool(0-1).</param>
-        /// <param name="fractionStanding">Fraction of biomass that remains standing when passed to surfaceOM (0-1).</param>
-        /// <returns>The amount of biomass (live+dead) removed from the plant (g/m2).</returns>
-        public double RemoveBiomass(double liveToRemove, double deadToRemove, double liveToResidue, double deadToResidue, double fractionStanding = 0)
-        {
-            return RemoveBiomass1(liveToRemove, deadToRemove, liveToResidue, deadToResidue,
-                                                     Live, Dead, Removed, Detached, fractionStanding);
-        }
-
-        /// <summary>
-        /// Test
-        /// </summary>
-        /// <param name="liveToRemove"></param>
-        /// <param name="deadToRemove"></param>
-        /// <param name="liveToResidue"></param>
-        /// <param name="deadToResidue"></param>
-        /// <param name="live"></param>
-        /// <param name="dead"></param>
-        /// <param name="removed"></param>
-        /// <param name="detached"></param>
-        /// <param name="fractionStanding"></param>
-        /// <param name="writeToSummary"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public double RemoveBiomass1(double liveToRemove, double deadToRemove, double liveToResidue, double deadToResidue,
-                                    PMF.Biomass live, PMF.Biomass dead,
-                                    PMF.Biomass removed, PMF.Biomass detached,
-                                    double fractionStanding = 0,
-                                    bool writeToSummary = true)
-        {
-            if (liveToRemove + liveToResidue > 1.0)
-                throw new Exception($"The sum of FractionToResidue and FractionToRemove for {Parent.Name} is greater than one for live biomass.");
-
-            if (deadToRemove + deadToResidue > 1.0)
-                throw new Exception($"The sum of FractionToResidue and FractionToRemove for {Parent.Name} is greater than one for dead biomass");
-
-            double liveFractionToRemove = liveToRemove + liveToResidue;
-            double deadFractionToRemove = deadToRemove + deadToResidue;
-
-            if (liveFractionToRemove + deadFractionToRemove > 0.0)
-            {
-                double totalBiomass = live.Wt + dead.Wt;
-                if (totalBiomass > 0)
-                {
-                    RemoveBiomassFromLiveAndDead(liveToRemove, deadToRemove, liveToResidue, deadToResidue, 
-                                                 live, dead, out PMF.Biomass removing, out PMF.Biomass detaching);
+        // /// <summary>Gets the biomass removed from the system (harvested, grazed, etc.)</summary>
+        // [JsonIgnore]
+        // public PMF.Biomass Removed { get; private set; }
 
 
-                    return removing.Wt + detaching.Wt; 
+        //  /// <summary>Remove biomass from organ.</summary>
+        // /// <param name="liveToRemove">Fraction of live biomass to remove from simulation (0-1).</param>
+        // /// <param name="deadToRemove">Fraction of dead biomass to remove from simulation (0-1).</param>
+        // /// <param name="liveToResidue">Fraction of live biomass to remove and send to residue pool(0-1).</param>
+        // /// <param name="deadToResidue">Fraction of dead biomass to remove and send to residue pool(0-1).</param>
+        // /// <param name="fractionStanding">Fraction of biomass that remains standing when passed to surfaceOM (0-1).</param>
+        // /// <returns>The amount of biomass (live+dead) removed from the plant (g/m2).</returns>
+        // public double RemoveBiomass(double liveToRemove, double deadToRemove, double liveToResidue, double deadToResidue, double fractionStanding = 0)
+        // {
+        //     return RemoveBiomass1(liveToRemove, deadToRemove, liveToResidue, deadToResidue,
+        //                                              Live, Dead, Removed, Detached, fractionStanding);
+        // }
+
+        // /// <summary>
+        // /// Test
+        // /// </summary>
+        // /// <param name="liveToRemove"></param>
+        // /// <param name="deadToRemove"></param>
+        // /// <param name="liveToResidue"></param>
+        // /// <param name="deadToResidue"></param>
+        // /// <param name="live"></param>
+        // /// <param name="dead"></param>
+        // /// <param name="removed"></param>
+        // /// <param name="detached"></param>
+        // /// <param name="fractionStanding"></param>
+        // /// <param name="writeToSummary"></param>
+        // /// <returns></returns>
+        // /// <exception cref="Exception"></exception>
+        // public double RemoveBiomass1(double liveToRemove, double deadToRemove, double liveToResidue, double deadToResidue,
+        //                             PMF.Biomass live, PMF.Biomass dead,
+        //                             PMF.Biomass removed, PMF.Biomass detached,
+        //                             double fractionStanding = 0,
+        //                             bool writeToSummary = true)
+        // {
+        //     if (liveToRemove + liveToResidue > 1.0)
+        //         throw new Exception($"The sum of FractionToResidue and FractionToRemove for {Parent.Name} is greater than one for live biomass.");
+
+        //     if (deadToRemove + deadToResidue > 1.0)
+        //         throw new Exception($"The sum of FractionToResidue and FractionToRemove for {Parent.Name} is greater than one for dead biomass");
+
+        //     double liveFractionToRemove = liveToRemove + liveToResidue;
+        //     double deadFractionToRemove = deadToRemove + deadToResidue;
+
+        //     if (liveFractionToRemove + deadFractionToRemove > 0.0)
+        //     {
+        //         double totalBiomass = live.Wt + dead.Wt;
+        //         if (totalBiomass > 0)
+        //         {
+        //             RemoveBiomassFromLiveAndDead(liveToRemove, deadToRemove, liveToResidue, deadToResidue, 
+        //                                          live, dead, out PMF.Biomass removing, out PMF.Biomass detaching);
 
 
-                }
-            }
+        //             return removing.Wt + detaching.Wt; 
 
-            return 0.0;
-        }
 
-        /// <summary>Removes biomass from live and dead biomass pools</summary>
-        /// <param name="liveToRemove">Fraction of live biomass to remove from simulation (0-1).</param>
-        /// <param name="deadToRemove">Fraction of dead biomass to remove from simulation (0-1).</param>
-        /// <param name="liveToResidue">Fraction of live biomass to remove and send to residue pool(0-1).</param>
-        /// <param name="deadToResidue">Fraction of dead biomass to remove and send to residue pool(0-1).</param>
-        /// <param name="live">Live biomass pool</param>
-        /// <param name="dead">Dead biomass pool</param>
-        /// <param name="removing">The removed pool to add to.</param>
-        /// <param name="detaching">The amount of detaching material</param>
-        private static void RemoveBiomassFromLiveAndDead(double liveToRemove, double deadToRemove, double liveToResidue, double deadToResidue, 
-                                                           PMF.Biomass live, PMF.Biomass dead, out PMF.Biomass removing, out PMF.Biomass detaching)
-        {
-            double remainingLiveFraction = 1.0 - (liveToResidue + liveToRemove);
-            double remainingDeadFraction = 1.0 - (deadToResidue + deadToRemove);
+        //         }
+        //     }
 
-            detaching = live * liveToResidue + dead * deadToResidue;
-            removing = live * liveToRemove + dead * deadToRemove;
+        //     return 0.0;
+        // }
 
-            live.Multiply(remainingLiveFraction);
-            dead.Multiply(remainingDeadFraction);
-        }
+        // /// <summary>Removes biomass from live and dead biomass pools</summary>
+        // /// <param name="liveToRemove">Fraction of live biomass to remove from simulation (0-1).</param>
+        // /// <param name="deadToRemove">Fraction of dead biomass to remove from simulation (0-1).</param>
+        // /// <param name="liveToResidue">Fraction of live biomass to remove and send to residue pool(0-1).</param>
+        // /// <param name="deadToResidue">Fraction of dead biomass to remove and send to residue pool(0-1).</param>
+        // /// <param name="live">Live biomass pool</param>
+        // /// <param name="dead">Dead biomass pool</param>
+        // /// <param name="removing">The removed pool to add to.</param>
+        // /// <param name="detaching">The amount of detaching material</param>
+        // private static void RemoveBiomassFromLiveAndDead(double liveToRemove, double deadToRemove, double liveToResidue, double deadToResidue, 
+        //                                                    PMF.Biomass live, PMF.Biomass dead, out PMF.Biomass removing, out PMF.Biomass detaching)
+        // {
+        //     double remainingLiveFraction = 1.0 - (liveToResidue + liveToRemove);
+        //     double remainingDeadFraction = 1.0 - (deadToResidue + deadToRemove);
+
+        //     detaching = live * liveToResidue + dead * deadToResidue;
+        //     removing = live * liveToRemove + dead * deadToRemove;
+
+        //     live.Multiply(remainingLiveFraction);
+        //     dead.Multiply(remainingDeadFraction);
+        // }
 
         
           
