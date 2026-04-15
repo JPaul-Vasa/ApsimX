@@ -3203,8 +3203,11 @@ namespace Models.GrazPlan
         /// </summary>
         public BiomassRemoved RemoveBiomass(string type, double amount)
         {
-            if (PastureModel == null || amount <= 0)
+            // if (PastureModel == null || amount <= 0)
+            //     return null;
+            if (PastureModel == null )
                 return null;
+    
 
             // Switch to kg/ha for consistency
             string prevUnit = PastureModel.MassUnit;

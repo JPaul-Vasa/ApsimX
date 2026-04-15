@@ -222,12 +222,12 @@ namespace Models.GrazPlan.Organs
             }
         }
 
-        
-        private PMF.Biomass liveBiomass = new PMF.Biomass();
-         private PMF.Biomass deadBiomass = new PMF.Biomass();
-         /// <summary>Gets the cohort live.</summary>
-        [JsonIgnore]
-        [Units("g/m^2")]
+         private PMF.Biomass liveBiomass = new PMF.Biomass();
+        private PMF.Biomass deadBiomass = new PMF.Biomass();
+
+        /// <summary>
+        /// Live Biomass
+        /// </summary>
         public PMF.Biomass Live
         {
             get
@@ -241,8 +241,6 @@ namespace Models.GrazPlan.Organs
         /// <summary>
         /// Dead Biomass
         /// </summary>
-        [JsonIgnore]
-        [Units("g/m^2")]
         public PMF.Biomass Dead
         {
             get
@@ -253,88 +251,99 @@ namespace Models.GrazPlan.Organs
 
         }
 
+
+
+
+        /// <summary>Calculate the values for calculated states.</summary>
         private void CalculateLiveDead()
         {
-            if (Name =="Leaf"  && IsAboveGround is true)
+
+
+           if (PastureModel != null)
             {
-        
-                liveBiomass.StructuralWt=GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10;
-                liveBiomass.StructuralN=GetDM(GrazType.TOTAL, GrazType.ptLEAF)/10.0 * GetPlantNutr(GrazType.TOTAL, GrazType.ptLEAF, TPlantElement.N);
-                deadBiomass.StructuralWt=0;
-                deadBiomass.StructuralN=0;
-
-            
-            }
-            if (Name == "Stem" && IsAboveGround is true)
-            {
-                liveBiomass.StructuralWt=GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10;
-                liveBiomass.StructuralN= GetDM(GrazType.TOTAL, GrazType.ptSTEM)/10.0 * GetPlantNutr(GrazType.TOTAL, GrazType.ptSTEM, TPlantElement.N);
-                deadBiomass.StructuralWt=0;
-                deadBiomass.StructuralN=0;
-            }
-
-        }    
-
-
-        /// Organ digestibility of live material   
-         public double LiveDigestibility
-        {
-            get
-            {   
-                if (PastureModel != null)
+              
+                if (Name == "Leaf")
                 {
-                    if(Name=="Leaf"  && IsAboveGround is true)
-                       return GetDMD(GrazType.TOTAL, GrazType.ptLEAF);
-                    if(Name=="Stem"  && IsAboveGround is true)
-                       return GetDMD(GrazType.TOTAL, GrazType.ptSTEM);
-                    if (Name == "Root" && IsAboveGround is false)
-                    {
-                        return  GetDMRoot()/10.0 * PastureModel.GetRootConc(GrazType.sgGREEN, GrazType.TOTAL, GrazType.TOTAL, TPlantElement.N);
-                    }
-                }
+                    liveBiomass.StructuralWt = GetDM(sgGREEN,GrazType.ptLEAF)/10.0;  // to g/m2
+                    liveBiomass.StructuralN = GetDM(sgGREEN,GrazType.ptLEAF)/10.0 * GetPlantNutr(sgGREEN,GrazType.ptLEAF, TPlantElement.N); // to g/m2
                 
-                return 0;
-            }
-        }
+                    deadBiomass.StructuralWt = GetDM(sgDRY,GrazType.ptLEAF)/10.0;  // to g/m2
+                    deadBiomass.StructuralN = GetDM(sgDRY,GrazType.ptLEAF)/10.0 * GetPlantNutr(sgGREEN,GrazType.ptLEAF, TPlantElement.N); 
+                } 
 
-
-         /// Organ digestibility of dead material   
-         public double DeadDigestibility
-        {
-            get
-            {   
-                if (PastureModel != null)
+                if(Name=="Stem")
                 {
-                    if(Name=="Leaf"  && IsAboveGround is true)
-                       return 0;
-                    if(Name=="Stem"  && IsAboveGround is true)
-                       return 0;
-                    if (Name == "Root" && IsAboveGround is false)
-                    {
-                        return  0;
-                    }
-                }
+                    liveBiomass.StructuralWt = GetDM(sgGREEN,GrazType.ptSTEM)/10.0;  // to g/m2
+                    liveBiomass.StructuralN = GetDM(sgGREEN,GrazType.ptSTEM)/10.0 * GetPlantNutr(sgGREEN,GrazType.ptSTEM, TPlantElement.N); // to g/m2
                 
-                return 0;
+                    deadBiomass.StructuralWt = GetDM(sgDRY,GrazType.ptSTEM)/10.0;  // to g/m2
+                    deadBiomass.StructuralN = GetDM(sgDRY,GrazType.ptSTEM)/10.0 * GetPlantNutr(sgGREEN,GrazType.ptSTEM, TPlantElement.N); 
+                }
             }
-        }
-        
 
+   
+        } 
 
-       
-
-         /// <summary>
-        /// Gets the material components of the organ.
+        /// <summary>
+        /// Live digestibility
         /// </summary>
-        public IEnumerable<DamageableBiomass> Material
+        public double LiveDigestibility
+        {
+            get
+            {   
+                 if (PastureModel != null)
+                {
+                    if (Name == "Leaf")
+                    {
+                        return GetDMD(sgGREEN, GrazType.ptLEAF);
+                    }
+                    if (Name == "Stem")
+                    {
+                        return GetDMD(sgGREEN, GrazType.ptSTEM);
+                    }
+                    
+                }  
+
+                return 0;  
+            }
+        }
+
+        /// <summary>
+        /// Dead digestibility
+        /// </summary>
+        public double DeadDigestibility
+        {
+            get
+            {   
+                 if (PastureModel != null)
+                {
+                    if (Name == "Leaf")
+                    {
+                        return GetDMD(sgDRY, GrazType.ptLEAF);
+                    }
+                    if (Name == "Stem")
+                    {
+                        return GetDMD(sgDRY, GrazType.ptSTEM);
+                    }
+                    
+                }  
+
+                return 0;  
+            }
+        }
+
+         /// <summary>A list of material (biomass) that can be damaged.</summary>
+         public IEnumerable<DamageableBiomass> Material
         {
             get
             {
                 yield return new DamageableBiomass($"{Parent.Name}.{Name}", Live, true, LiveDigestibility);
                 yield return new DamageableBiomass($"{Parent.Name}.{Name}", Dead, false, DeadDigestibility);
-
             }
-        } 
+        }
+
+
+
          
 
         // /// <summary>Gets the biomass detached (sent to soil/surface organic matter)</summary>
