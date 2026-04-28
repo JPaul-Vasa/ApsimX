@@ -3253,9 +3253,14 @@ namespace Models.GrazPlan
                     int idx = part - 1;
 
                     // Remove proportionally from live + dead
-                    double partDM =
-                        PastureModel.GetHerbageMass(stESTAB, part, TOTAL) +
-                        PastureModel.GetHerbageMass(stDEAD, part, TOTAL);
+                    // double partDM =
+                    //     PastureModel.GetHerbageMass(stESTAB, part, TOTAL) +
+                    //     PastureModel.GetHerbageMass(stDEAD, part, TOTAL);
+
+                    double partliveDM = PastureModel.GetHerbageMass(stESTAB, part, TOTAL) ;
+                    double partDeadDM = PastureModel.GetHerbageMass(stDEAD, part, TOTAL);
+
+                    double partDM = partliveDM + partDeadDM;
 
                     double partRemoveDM = partDM * frac;
                     removed.dltCropDM[idx] = partRemoveDM;
@@ -3302,6 +3307,126 @@ namespace Models.GrazPlan
                 return removed;
 
         }
+
+      private double totallive=0;
+        private double totaldead=0;
+
+
+         /// <summary>
+        /// Remove a specified amount of above-ground biomass (kg/ha),
+        /// proportionally across leaf and stem, and return a BiomassRemoved object.
+        /// </summary>
+        public void RemoveLiveDeadBiomass(string type, double amount)
+        {
+            double TotalBiomass =0;
+           // double TotalN = 0;
+
+            string prevUnit = PastureModel.MassUnit;
+            PastureModel.MassUnit = "kg/ha";
+            double amountToRemove;  
+
+            for(int part = ptLEAF; part <= ptSTEM; part++)
+            {
+                for (int cls=0; cls <= 0; cls++)
+                {
+                   double TotalBiomasslive = PastureModel.GetHerbageMass(sgGREEN,part,cls) ;
+                    double TotalBiomassdead = PastureModel.GetHerbageMass(sgDRY,part,cls);
+                    TotalBiomass += TotalBiomasslive+TotalBiomassdead;
+                }
+            }
+
+            // for (int part = ptLEAF; part <= ptSTEM; part++)
+            // {
+            //     TotalBiomass += PastureModel.GetHerbageMass(sgGREEN,part, TOTAL) + PastureModel.GetHerbageMass(sgDRY,part,TOTAL);
+            // }
+
+            // for(int part = ptLEAF; part <= ptSTEM; part++)
+            // {
+            //     for (int cls=1; cls <= HerbClassNo; part++)
+            //     {
+            //         TotalBiomass += PastureModel.GetHerbageMass(sgGREEN,part,cls) + PastureModel.GetHerbageMass(sgDRY,part,cls);
+            //     }
+            // }
+
+            if(TotalBiomass > 0.0)
+            {
+                 if(type.ToLower() == "setresidueamount")
+                {
+                    amountToRemove = Math.Max(0.0, TotalBiomass - amount);
+                }
+                else if (type.ToLower() == "setremoveamount")
+                {
+                    amountToRemove = Math.Max(0.0,amount);
+                }
+                else
+                 {
+                throw new ApsimXException(this, "Type of amount to remove on graze not recognized (use \'SetResidueAmount\' or \'SetRemoveAmount\')");
+                
+                 }
+                
+                
+                fracToRemove = amountToRemove/TotalBiomass;
+            }
+
+            for (int part = ptLEAF; part <= ptSTEM; part++)
+            {
+                for (int cls = 1; cls <= HerbClassNo; cls++)
+                {
+                    double liveDM = PastureModel.GetHerbageMass(sgGREEN, part, cls);
+                    double liveN = PastureModel.GetHerbageNutr(sgGREEN,part,cls, TPlantElement.N);
+
+                    double deadDM = PastureModel.GetHerbageMass(sgDRY, part, cls);
+                    double deadN = PastureModel.GetHerbageNutr(sgDRY,part,cls, TPlantElement.N);
+                    
+                    if(liveDM > 0.0)
+                    {
+                        //double setmass = 0.0 - liveDM * fracToRemove;
+                        double setmass = liveDM - liveDM * fracToRemove;
+                        PastureModel.SetHerbageMass(stESTAB,part,cls,setmass);
+                    }
+                    else
+                    PastureModel.SetHerbageMass(stESTAB,part,cls,0.0);
+                                        
+
+                    if(DeadDM > 0.0)
+                    {
+                        double setmass = deadDM - deadDM * fracToRemove;   
+                       
+                        PastureModel.SetHerbageMass(stDEAD, part, cls,setmass);
+                        
+                    }
+                    else
+                    PastureModel.SetHerbageMass(stDEAD, part, cls,0.0);
+                   
+
+                    if(liveN > 0.0)
+                    {
+                        double setN = 0.0 - liveN * fracToRemove;
+                        PastureModel.SetHerbageNutr(stESTAB,part,cls,TPlantElement.N,setN);
+
+                    }
+                    else
+                    PastureModel.SetHerbageNutr(stESTAB,part,cls,TPlantElement.N,0.0);
+
+                     if(DeadN > 0.0)
+                    {
+                        double setN = deadN - deadN * fracToRemove;
+                        PastureModel.SetHerbageNutr(stESTAB,part,cls,TPlantElement.N,setN);
+
+                    }
+                    else
+                    PastureModel.SetHerbageNutr(stESTAB,part,cls,TPlantElement.N,0.0);
+  
+
+                    
+                }
+                
+            }
+
+           
+        }
+
+       
 
        
 
@@ -3547,6 +3672,11 @@ namespace Models.GrazPlan
 
         /// <summary>Amount of soil NO3-N available to be taken up by the plant (kg/ha).</summary>
         private double[] no3Uptake;
+  
+        private double fracToRemove;
+
+        //private double totalDMremoved =0;
+        //private double total =0;
 
         /// <summary>Finds out the amount of plant available water in the soil.</summary>
         /// <param name="availableWater">Available water (mm)</param>

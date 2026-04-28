@@ -329,11 +329,12 @@ namespace Models.GrazPlan
                         if (MathUtilities.IsGreaterThan(amountToRemove, 0.0))
                         {
                            
-                             var grazed = forages[i].RemoveBiomass(
-                             amountToRemove,
-                             PreferenceForGreenOverDead: 1.0,
-                             PreferenceForLeafOverStems: 1.0,
-                             summary: summary);
+                             var grazed = forages[i].RemoveBiomass(amountToRemove: amountToRemove);
+                            //  var grazed = forages[i].RemoveBiomass(
+                            //  amountToRemove,
+                            //  PreferenceForGreenOverDead: 1.0,
+                            //  PreferenceForLeafOverStems: 1.0,
+                            //  summary: summary);
                           
                             double grazedDigestibility = grazed.Digestibility;
                             var grazedMetabolisableEnergy = potentialMEOfHerbage * grazedDigestibility;

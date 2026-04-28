@@ -222,9 +222,10 @@ namespace Models.GrazPlan.Organs
             }
         }
 
-         private PMF.Biomass liveBiomass = new PMF.Biomass();
+        private PMF.Biomass liveBiomass = new PMF.Biomass();
         private PMF.Biomass deadBiomass = new PMF.Biomass();
 
+        //private bool recalculate = false;
         /// <summary>
         /// Live Biomass
         /// </summary>
@@ -261,9 +262,14 @@ namespace Models.GrazPlan.Organs
 
            if (PastureModel != null)
             {
-              
+                
                 if (Name == "Leaf")
-                {
+                {   
+                   //double LeafGreen= GetDM(sgGREEN,GrazType.ptLEAF)/10.0;  // to g/m2
+                   double LeafGreen = PastureModel.GetHerbageMass(sgGREEN, ptLEAF, TOTAL); // to g/m2
+                   double LeafEst = PastureModel.GetHerbageMass(stESTAB, TOTAL, TOTAL);
+                    Console.WriteLine("LeafGreen" + LeafGreen);
+                    Console.WriteLine("LeafEst" + LeafEst);
                     liveBiomass.StructuralWt = GetDM(sgGREEN,GrazType.ptLEAF)/10.0;  // to g/m2
                     liveBiomass.StructuralN = GetDM(sgGREEN,GrazType.ptLEAF)/10.0 * GetPlantNutr(sgGREEN,GrazType.ptLEAF, TPlantElement.N); // to g/m2
                 
@@ -336,109 +342,599 @@ namespace Models.GrazPlan.Organs
          public IEnumerable<DamageableBiomass> Material
         {
             get
-            {
+            {   
+                CalculateLiveDead();
                 yield return new DamageableBiomass($"{Parent.Name}.{Name}", Live, true, LiveDigestibility);
                 yield return new DamageableBiomass($"{Parent.Name}.{Name}", Dead, false, DeadDigestibility);
             }
         }
+private bool needToRecalculateLiveDead = true;
+      
+        private void RecalculateLiveDead()
+{
+    if (!needToRecalculateLiveDead)
+        return;
 
+    needToRecalculateLiveDead = false;
+
+    liveBiomass.Clear();
+    deadBiomass.Clear();
+
+    // Sum over digestibility classes
+    int part = (Name == "Leaf") ? GrazType.ptLEAF :
+               (Name == "Stem") ? GrazType.ptSTEM : -1;
+
+    if (part < 0)
+        return;
+
+    double liveDM = 0, liveN = 0;
+    double deadDM = 0, deadN = 0;
+
+    for (int cls = 1; cls <= HerbClassNo; cls++)
+    {
+        liveDM += PastureModel.GetHerbageMass(stESTAB, part, cls);
+        liveN  += PastureModel.GetHerbageNutr(stESTAB, part, cls, TPlantElement.N);
+
+        deadDM += PastureModel.GetHerbageMass(stDEAD, part, cls);
+        deadN  += PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.N);
+    }
+
+    liveBiomass.StructuralWt = liveDM / 10.0;
+    liveBiomass.StructuralN  = liveN  / 10.0;
+
+    deadBiomass.StructuralWt = deadDM / 10.0;
+    deadBiomass.StructuralN  = deadN  / 10.0;
+}
+
+
+ /// <summary>
+        /// Name of the pasture species for which parameters are to be used
+        /// </summary>
+        [Description("Species")]
+        public string Species { get; set; } = "Perennial Ryegrass";
+
+       /// <summary>
+       /// test remove biomass
+       /// </summary>
+       /// <param name="liveToRemove"></param>
+       /// <param name="deadToRemove"></param>
+       /// <param name="liveToResidue"></param>
+       /// <param name="deadToResidue"></param>
+       /// <param name="fractionStanding"></param>
+       /// <returns></returns>
+        
+        public double RemoveBiomass1(
+    double liveToRemove = 0,
+    double deadToRemove = 0,
+    double liveToResidue = 0,
+    double deadToResidue = 0,
+    double fractionStanding = 0)
+{
+    double totalDM =
+        PastureModel.GetHerbageMass(stESTAB, TOTAL, TOTAL) +
+        PastureModel.GetHerbageMass(stDEAD, TOTAL, TOTAL);
+
+    if (totalDM <= 0.0)
+        return 0.0;
+
+    BiomassRemoved removed = new BiomassRemoved(2);
+    removed.CropType = this.Species;
+    removed.DMType[0] = "leaf";
+    removed.DMType[1] = "stem";
+
+    double totalRemovedDM = 0.0;
+
+    for (int part = ptLEAF; part <= ptSTEM; part++)
+    {
+        int idx = part - 1;
+
+        double partLiveRemovedDM = 0.0;
+        double partDeadRemovedDM = 0.0;
+        double partLiveRemovedN  = 0.0;
+        double partDeadRemovedN  = 0.0;
+        double partLiveRemovedP  = 0.0;
+        double partDeadRemovedP  = 0.0;
+
+        for (int cls = 1; cls <= HerbClassNo; cls++)
+        {
+            // -----------------------------
+            // LIVE POOL
+            // -----------------------------
+            double liveDM = PastureModel.GetHerbageMass(stESTAB, part, cls);
+            double liveN  = PastureModel.GetHerbageNutr(stESTAB, part, cls, TPlantElement.N);
+            double liveP  = PastureModel.GetHerbageNutr(stESTAB, part, cls, TPlantElement.P);
+
+            double liveRemoveDM = liveDM * liveToRemove;
+            double liveResidueDM = liveDM * liveToResidue;
+
+            double liveRemoveN = liveN * liveToRemove;
+            double liveResidueN = liveN * liveToResidue;
+
+            double liveRemoveP = liveP * liveToRemove;
+            double liveResidueP = liveP * liveToResidue;
+
+            // Update LIVE pool
+            PastureModel.SetHerbageMass(stESTAB, part, cls,
+                liveDM - liveRemoveDM - liveResidueDM);
+
+            PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.N,
+                liveN - liveRemoveN - liveResidueN);
+
+            PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.P,
+                liveP - liveRemoveP - liveResidueP);
+
+            // Accumulate removed (not residue)
+            partLiveRemovedDM += liveRemoveDM;
+            partLiveRemovedN  += liveRemoveN;
+            partLiveRemovedP  += liveRemoveP;
+
+            // -----------------------------
+            // DEAD POOL
+            // -----------------------------
+            double deadDM = PastureModel.GetHerbageMass(stDEAD, part, cls);
+            double deadN  = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.N);
+            double deadP  = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.P);
+
+            double deadRemoveDM = deadDM * deadToRemove;
+            double deadResidueDM = deadDM * deadToResidue;
+
+            double deadRemoveN = deadN * deadToRemove;
+            double deadResidueN = deadN * deadToResidue;
+
+            double deadRemoveP = deadP * deadToRemove;
+            double deadResidueP = deadP * deadToResidue;
+
+            // Update DEAD pool
+            PastureModel.SetHerbageMass(stDEAD, part, cls,
+                deadDM - deadRemoveDM - deadResidueDM);
+
+            PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.N,
+                deadN - deadRemoveN - deadResidueN);
+
+            PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.P,
+                deadP - deadRemoveP - deadResidueP);
+
+            // Accumulate removed (not residue)
+            partDeadRemovedDM += deadRemoveDM;
+            partDeadRemovedN  += deadRemoveN;
+            partDeadRemovedP  += deadRemoveP;
+//Console.WriteLine($"Before={liveDM}, After={PastureModel.GetHerbageMass(stESTAB, part, cls)}");
+           
+            liveBiomass.StructuralWt=PastureModel.GetHerbageMass(stESTAB, part, cls);
+            
+        }
+
+        // Report removed DM, N, P
+        removed.dltCropDM[idx] = partLiveRemovedDM + partDeadRemovedDM;
+        removed.dltDM_N[idx]   = partLiveRemovedN  + partDeadRemovedN;
+        removed.dltDM_P[idx]   = partLiveRemovedP  + partDeadRemovedP;
+
+        // Fraction to residue (for reporting only)
+        removed.FractionToResidue[idx] = liveToResidue + deadToResidue;
+         Console.WriteLine(PastureModel.GetHerbageMass(stESTAB, 1, 0));
+        totalRemovedDM += removed.dltCropDM[idx];
+        
+    }
+    
+    needToRecalculateLiveDead = true;
+    return totalRemovedDM;
+}
+
+        /// <summary>
+        /// test
+        /// </summary>
+        /// <param name="liveToRemove"></param>
+        /// <param name="deadToRemove"></param>
+        /// <param name="liveToResidue"></param>
+        /// <param name="deadToResidue"></param>
+        /// <param name="fractionStanding"></param>
+        /// <returns></returns>
+
+        public double RemoveBiomass2(double liveToRemove = 0, double deadToRemove = 0, double liveToResidue = 0, double deadToResidue = 0, double fractionStanding = 0)
+        {
+            
+
+            double totalDM = PastureModel.GetHerbageMass(stESTAB, TOTAL, TOTAL) +  PastureModel.GetHerbageMass(stDEAD, TOTAL, TOTAL);
+
+             if (totalDM <= 0.0)
+                return 0.0;
+            // Prepare return object (leaf + stem)
+            BiomassRemoved removed = new BiomassRemoved(2);
+            removed.CropType = this.Species;
+            removed.DMType[0] = "leaf";
+            removed.DMType[1] = "stem";
+                
+            // Loop organs
+            for (int part = ptLEAF; part <= ptSTEM; part ++)
+                {
+                    int idx = part - 1;
+                    
+                    // Remove biomass proportionally from live + dead
+                    double partLiveDM =  PastureModel.GetHerbageMass(stESTAB, part, TOTAL);
+                    double  partDeadDM = PastureModel.GetHerbageMass(stDEAD, part, TOTAL);
+                    double partLiveRemovedDM = partLiveDM * liveToRemove;
+                    double partDeadRemoveDM = partDeadDM * deadToRemove;
+                    double partLiveDeadRemoveDM = partLiveRemovedDM + partDeadRemoveDM;
+
+                    removed.dltCropDM[idx]= partLiveDeadRemoveDM;
+
+                    //Remove N proportionally
+
+                    double partLiveN =  PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.N);
+                    double  partDeadN = PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.N);
+                    double partLiveRemoveN = partLiveN * liveToRemove;
+                    double partDeadRemoveN = partDeadN * deadToRemove;
+                    double partLiveDeadRemoveN = partLiveRemoveN + partDeadRemoveN;
+                    removed.dltDM_N[idx] = partLiveDeadRemoveN ;
+                    
+                     double partLiveP =  PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.P);
+                    double  partDeadP = PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.N);
+                    double partLiveRemoveP = partLiveP * liveToRemove;
+                    double partDeadRemoveP = partDeadP * deadToRemove;
+                    double partLiveDeadRemoveP = partLiveRemoveP + partDeadRemoveP;
+                    removed.dltDM_P[idx] = partLiveDeadRemoveP ;
+
+                     removed.FractionToResidue[idx] = 1.0;
+
+                     for(int cls =1; cls <= HerbClassNo; cls++)
+                {
+                    double liveDM = PastureModel.GetHerbageMass(stESTAB, part,cls);
+                    double RemoveLiveBiomass= liveDM * liveToRemove;
+                    PastureModel.SetHerbageMass(stESTAB,part,cls,liveDM-RemoveLiveBiomass);
+
+                    double liveN = PastureModel.GetHerbageNutr(stESTAB,part,cls,TPlantElement.N);
+                    double liveP = PastureModel.GetHerbageNutr(stESTAB, part, cls, TPlantElement.P);
+                    PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.N, liveN - liveN * liveToRemove);
+                    PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.P, liveP - liveP * liveToRemove);
+
+                    // Dead
+                    double deadDM = PastureModel.GetHerbageMass(stDEAD, part, cls);
+                    double deadRemove = deadDM * deadToRemove;
+                    PastureModel.SetHerbageMass(stDEAD, part, cls, deadDM - deadToRemove);
+
+                    double deadN = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.N);
+                    double deadP = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.P);
+                    PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.N, deadN - deadN * deadToRemove);
+                    PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.P, deadP - deadP * deadToRemove);
+
+                     
+
+                }
+
+
+
+            }
+
+            Console.WriteLine(PastureModel.GetHerbageMass(stESTAB,1,0));    
+            
+          return 0.0;  
+        }
+
+// /// <summary>
+// /// test
+// /// </summary>
+// /// <param name="liveToRemove"></param>
+// /// <param name="deadToRemove"></param>
+// /// <param name="liveToResidue"></param>
+// /// <param name="deadToResidue"></param>
+// /// <param name="fractionStanding"></param>
+// /// <returns></returns>
+        
+//         public double RemoveBiomass(double liveToRemove = 0, double deadToRemove = 0, double liveToResidue = 0, double deadToResidue = 0, double fractionStanding = 0)
+//         {
+            
+
+//             double totalDM = PastureModel.GetHerbageMass(stESTAB, TOTAL, TOTAL) +  PastureModel.GetHerbageMass(stDEAD, TOTAL, TOTAL);
+
+//              if (totalDM <= 0.0)
+//                 return 0.0;
+//             // Prepare return object (leaf + stem)
+//             BiomassRemoved removed = new BiomassRemoved(2);
+//             removed.CropType = this.Species;
+//             removed.DMType[0] = "leaf";
+//             removed.DMType[1] = "stem";
+
+//             if(Name=="Leaf")
+//                 part=1;
+//             if(Name=="Stem")
+//                 part =2;
+//              int idx = part - 1;   
+//             // Loop organs
+           
+//                     double partLiveDM =  PastureModel.GetHerbageMass(stESTAB, part, TOTAL);
+//                     double  partDeadDM = PastureModel.GetHerbageMass(stDEAD, part, TOTAL);
+//                     double partLiveRemovedDM = partLiveDM * liveToRemove;
+//                     double partDeadRemoveDM = partDeadDM * deadToRemove;
+//                     double partLiveDeadRemoveDM = partLiveRemovedDM + partDeadRemoveDM;
+
+//                     removed.dltCropDM[idx]= partLiveDeadRemoveDM;
+
+//                      //Remove N proportionally
+
+//                     double partLiveN =  PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.N);
+//                     double  partDeadN = PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.N);
+//                     double partLiveRemoveN = partLiveN * liveToRemove;
+//                     double partDeadRemoveN = partDeadN * deadToRemove;
+//                     double partLiveDeadRemoveN = partLiveRemoveN + partDeadRemoveN;
+//                     removed.dltDM_N[idx] = partLiveDeadRemoveN ;
+                    
+//                      double partLiveP =  PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.P);
+//                     double  partDeadP = PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.P);
+//                     double partLiveRemoveP = partLiveP * liveToRemove;
+//                     double partDeadRemoveP = partDeadP * deadToRemove;
+//                     double partLiveDeadRemoveP = partLiveRemoveP + partDeadRemoveP;
+//                     removed.dltDM_P[idx] = partLiveDeadRemoveP ;
+
+//                      removed.FractionToResidue[idx] = 1.0;
+
+                
+//                     // double liveDM = PastureModel.GetHerbageMass(stESTAB, part,0);
+//                     // double RemoveLiveBiomass= liveDM * liveToRemove;
+//                     // PastureModel.SetHerbageMass(stESTAB,part,0,liveDM-RemoveLiveBiomass);
+
+//                     // double liveN = PastureModel.GetHerbageNutr(stESTAB,part,0,TPlantElement.N);
+//                     // double liveP = PastureModel.GetHerbageNutr(stESTAB, part, 0, TPlantElement.P);
+//                     // PastureModel.SetHerbageNutr(stESTAB, part, 0, TPlantElement.N, liveN - liveN * liveToRemove);
+//                     // PastureModel.SetHerbageNutr(stESTAB, part, 0, TPlantElement.P, liveP - liveP * liveToRemove);
+
+//                     // // Dead
+//                     // double deadDM = PastureModel.GetHerbageMass(stDEAD, part, 0);
+//                     // double deadRemove = deadDM * deadToRemove;
+//                     // PastureModel.SetHerbageMass(stDEAD, part, 0, deadDM - deadToRemove);
+
+//                     // double deadN = PastureModel.GetHerbageNutr(stDEAD, part, 0, TPlantElement.N);
+//                     // double deadP = PastureModel.GetHerbageNutr(stDEAD, part, 0, TPlantElement.P);
+//                     // PastureModel.SetHerbageNutr(stDEAD, part, 0, TPlantElement.N, deadN - deadN * deadToRemove);
+//                     // PastureModel.SetHerbageNutr(stDEAD, part, 0, TPlantElement.P, deadP - deadP * deadToRemove);
+
+               
+//                for (int part = ptLEAF; part <= ptSTEM; part ++)
+//                 {      
+
+//                      for(int cls =1; cls <= HerbClassNo; cls++)
+//                 {
+//                     double liveDM = PastureModel.GetHerbageMass(stESTAB, part,cls);
+//                     double RemoveLiveBiomass= liveDM * liveToRemove;
+//                     PastureModel.SetHerbageMass(stESTAB,part,cls,liveDM-RemoveLiveBiomass);
+
+//                     double liveN = PastureModel.GetHerbageNutr(stESTAB,part,cls,TPlantElement.N);
+//                     double liveP = PastureModel.GetHerbageNutr(stESTAB, part, cls, TPlantElement.P);
+//                     PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.N, liveN - liveN * liveToRemove);
+//                     PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.P, liveP - liveP * liveToRemove);
+
+//                     // Dead
+//                     double deadDM = PastureModel.GetHerbageMass(stDEAD, part, cls);
+//                     double deadRemove = deadDM * deadToRemove;
+//                     PastureModel.SetHerbageMass(stDEAD, part, cls, deadDM - deadToRemove);
+
+//                     double deadN = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.N);
+//                     double deadP = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.P);
+//                     PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.N, deadN - deadN * deadToRemove);
+//                     PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.P, deadP - deadP * deadToRemove);
+
+//                 }
+//                 }
+                   
+
+                   
+                     
 
 
          
-
-        // /// <summary>Gets the biomass detached (sent to soil/surface organic matter)</summary>
-        // [JsonIgnore]
-        // public PMF.Biomass Detached { get; private set; }
-
-        // /// <summary>Gets the biomass removed from the system (harvested, grazed, etc.)</summary>
-        // [JsonIgnore]
-        // public PMF.Biomass Removed { get; private set; }
+            
+//           return  partLiveDeadRemoveDM;  
+//         }
 
 
-        //  /// <summary>Remove biomass from organ.</summary>
-        // /// <param name="liveToRemove">Fraction of live biomass to remove from simulation (0-1).</param>
-        // /// <param name="deadToRemove">Fraction of dead biomass to remove from simulation (0-1).</param>
-        // /// <param name="liveToResidue">Fraction of live biomass to remove and send to residue pool(0-1).</param>
-        // /// <param name="deadToResidue">Fraction of dead biomass to remove and send to residue pool(0-1).</param>
-        // /// <param name="fractionStanding">Fraction of biomass that remains standing when passed to surfaceOM (0-1).</param>
-        // /// <returns>The amount of biomass (live+dead) removed from the plant (g/m2).</returns>
-        // public double RemoveBiomass(double liveToRemove, double deadToRemove, double liveToResidue, double deadToResidue, double fractionStanding = 0)
-        // {
-        //     return RemoveBiomass1(liveToRemove, deadToRemove, liveToResidue, deadToResidue,
-        //                                              Live, Dead, Removed, Detached, fractionStanding);
-        // }
-
-        // /// <summary>
-        // /// Test
-        // /// </summary>
-        // /// <param name="liveToRemove"></param>
-        // /// <param name="deadToRemove"></param>
-        // /// <param name="liveToResidue"></param>
-        // /// <param name="deadToResidue"></param>
-        // /// <param name="live"></param>
-        // /// <param name="dead"></param>
-        // /// <param name="removed"></param>
-        // /// <param name="detached"></param>
-        // /// <param name="fractionStanding"></param>
-        // /// <param name="writeToSummary"></param>
-        // /// <returns></returns>
-        // /// <exception cref="Exception"></exception>
-        // public double RemoveBiomass1(double liveToRemove, double deadToRemove, double liveToResidue, double deadToResidue,
-        //                             PMF.Biomass live, PMF.Biomass dead,
-        //                             PMF.Biomass removed, PMF.Biomass detached,
-        //                             double fractionStanding = 0,
-        //                             bool writeToSummary = true)
-        // {
-        //     if (liveToRemove + liveToResidue > 1.0)
-        //         throw new Exception($"The sum of FractionToResidue and FractionToRemove for {Parent.Name} is greater than one for live biomass.");
-
-        //     if (deadToRemove + deadToResidue > 1.0)
-        //         throw new Exception($"The sum of FractionToResidue and FractionToRemove for {Parent.Name} is greater than one for dead biomass");
-
-        //     double liveFractionToRemove = liveToRemove + liveToResidue;
-        //     double deadFractionToRemove = deadToRemove + deadToResidue;
-
-        //     if (liveFractionToRemove + deadFractionToRemove > 0.0)
-        //     {
-        //         double totalBiomass = live.Wt + dead.Wt;
-        //         if (totalBiomass > 0)
-        //         {
-        //             RemoveBiomassFromLiveAndDead(liveToRemove, deadToRemove, liveToResidue, deadToResidue, 
-        //                                          live, dead, out PMF.Biomass removing, out PMF.Biomass detaching);
-
-
-        //             return removing.Wt + detaching.Wt; 
-
-
-        //         }
-        //     }
-
-        //     return 0.0;
-        // }
-
-        // /// <summary>Removes biomass from live and dead biomass pools</summary>
-        // /// <param name="liveToRemove">Fraction of live biomass to remove from simulation (0-1).</param>
-        // /// <param name="deadToRemove">Fraction of dead biomass to remove from simulation (0-1).</param>
-        // /// <param name="liveToResidue">Fraction of live biomass to remove and send to residue pool(0-1).</param>
-        // /// <param name="deadToResidue">Fraction of dead biomass to remove and send to residue pool(0-1).</param>
-        // /// <param name="live">Live biomass pool</param>
-        // /// <param name="dead">Dead biomass pool</param>
-        // /// <param name="removing">The removed pool to add to.</param>
-        // /// <param name="detaching">The amount of detaching material</param>
-        // private static void RemoveBiomassFromLiveAndDead(double liveToRemove, double deadToRemove, double liveToResidue, double deadToResidue, 
-        //                                                    PMF.Biomass live, PMF.Biomass dead, out PMF.Biomass removing, out PMF.Biomass detaching)
-        // {
-        //     double remainingLiveFraction = 1.0 - (liveToResidue + liveToRemove);
-        //     double remainingDeadFraction = 1.0 - (deadToResidue + deadToRemove);
-
-        //     detaching = live * liveToResidue + dead * deadToResidue;
-        //     removing = live * liveToRemove + dead * deadToRemove;
-
-        //     live.Multiply(remainingLiveFraction);
-        //     dead.Multiply(remainingDeadFraction);
-        // }
-
+/// <summary>
+/// test
+/// </summary>
+/// <param name="liveToRemove"></param>
+/// <param name="deadToRemove"></param>
+/// <param name="liveToResidue"></param>
+/// <param name="deadToResidue"></param>
+/// <param name="fractionStanding"></param>
+/// <returns></returns>
         
+        public double RemoveBiomass(double liveToRemove = 0, double deadToRemove = 0, double liveToResidue = 0, double deadToResidue = 0, double fractionStanding = 0)
+        {
+            
+
+            double totalDM = PastureModel.GetHerbageMass(stESTAB, TOTAL, TOTAL) +  PastureModel.GetHerbageMass(stDEAD, TOTAL, TOTAL);
+
+             if (totalDM <= 0.0)
+                return 0.0;
+
+            // // Prepare return object (leaf + stem)
+            // BiomassRemoved removed = new BiomassRemoved(2);
+            // removed.CropType = this.Species;
+            // removed.DMType[0] = "leaf";
+            // removed.DMType[1] = "stem";
+
+
+            if (Name == "Leaf")
+            {
+                int part=1;
+                int idx=part-1;
+                 // Remove biomass proportionally from live + dead
+                    //double partLiveDM =  PastureModel.GetHerbageMass(stESTAB, part, TOTAL);
+                    //double  partDeadDM = PastureModel.GetHerbageMass(stDEAD, part, TOTAL);
+                    double partLiveDM =  PastureModel.GetHerbageMass(sgGREEN, part, TOTAL);
+                    double  partDeadDM = PastureModel.GetHerbageMass(sgDRY, part, TOTAL);
+                    double partLiveRemovedDM = partLiveDM * liveToRemove;
+                    double partDeadRemoveDM = partDeadDM * deadToRemove;
+                    double partLiveDeadRemoveDM = partLiveRemovedDM + partDeadRemoveDM;
+
+                    //removed.dltCropDM[idx]= partLiveDeadRemoveDM;
+
+                    //Remove N proportionally
+
+                    double partLiveN =  PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.N);
+                    double  partDeadN = PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.N);
+                    double partLiveRemoveN = partLiveN * liveToRemove;
+                    double partDeadRemoveN = partDeadN * deadToRemove;
+                    double partLiveDeadRemoveN = partLiveRemoveN + partDeadRemoveN;
+                   // removed.dltDM_N[idx] = partLiveDeadRemoveN ;
+                    
+                     double partLiveP =  PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.P);
+                    double  partDeadP = PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.P);
+                    double partLiveRemoveP = partLiveP * liveToRemove;
+                    double partDeadRemoveP = partDeadP * deadToRemove;
+                    double partLiveDeadRemoveP = partLiveRemoveP + partDeadRemoveP;
+                    //removed.dltDM_P[idx] = partLiveDeadRemoveP ;
+
+                   // removed.FractionToResidue[idx] = 1.0;
+                    for(int cls =1; cls <= HerbClassNo; cls++)
+                {
+                    double liveLeafDM = PastureModel.GetHerbageMass(sgGREEN, part, cls);
+                    double RemoveLiveBiomass= liveLeafDM * liveToRemove;
+                    PastureModel.SetHerbageMass(stESTAB, part, cls, liveLeafDM-RemoveLiveBiomass);
+
+                    double liveStemDM = PastureModel.GetHerbageMass(stESTAB, 2 , cls);
+                    PastureModel.SetHerbageMass(stESTAB, 2, cls, liveStemDM);
+
+                    double liveLeafN = PastureModel.GetHerbageNutr(stESTAB, part, cls,TPlantElement.N);
+                    double liveLeafP = PastureModel.GetHerbageNutr(stESTAB, part, cls, TPlantElement.P);
+                    PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.N, liveLeafN  - liveLeafN  * liveToRemove);
+                    PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.P, liveLeafP - liveLeafP * liveToRemove);
+
+                    double liveStemN = PastureModel.GetHerbageNutr(stESTAB, 2, cls,TPlantElement.N);
+                    double liveStemP = PastureModel.GetHerbageNutr(stESTAB, 2, cls, TPlantElement.P);
+                    PastureModel.SetHerbageNutr(stESTAB, 2, cls, TPlantElement.N, liveStemN );
+                    PastureModel.SetHerbageNutr(stESTAB, 2, cls, TPlantElement.P, liveStemP);
+
+                    // Dead
+                    double deadLeafDM = PastureModel.GetHerbageMass(stDEAD, part, cls);
+                    double RemoveDeadLeafDM = deadLeafDM * deadToRemove;
+                    PastureModel.SetHerbageMass(stDEAD, part, cls, deadLeafDM -  RemoveDeadLeafDM);
+
+                    double deadStemDM = PastureModel.GetHerbageMass(stDEAD, 2, cls);
+                    PastureModel.SetHerbageMass(stDEAD, 2, cls, deadStemDM );
+
+
+
+
+                    double deadLeafN = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.N);
+                    double deadLeafP = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.P);
+                    PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.N, deadLeafN - deadLeafN * deadToRemove);
+                    PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.P, deadLeafP - deadLeafP * deadToRemove);
+
+                    double deadStemN = PastureModel.GetHerbageNutr(stDEAD, 2, cls, TPlantElement.N);
+                    double deadStemP = PastureModel.GetHerbageNutr(stDEAD, 2, cls, TPlantElement.P);
+                    PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.N, deadStemN);
+                    PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.P, deadStemP);
+                     
+
+                }
+
+                return partLiveDeadRemoveDM;
+
+            }
+
+
+            if (Name == "Stem")
+            {
+                int part = 2;
+                int idx = part -1;
+                // Remove biomass proportionally from live + dead
+                    double partLiveDM =  PastureModel.GetHerbageMass(stESTAB, part, TOTAL);
+                    double  partDeadDM = PastureModel.GetHerbageMass(stDEAD, part, TOTAL);
+                    double partLiveRemovedDM = partLiveDM * liveToRemove;
+                    double partDeadRemoveDM = partDeadDM * deadToRemove;
+                    double partLiveDeadRemoveDM = partLiveRemovedDM + partDeadRemoveDM;
+
+                   // removed.dltCropDM[idx]= partLiveDeadRemoveDM;
+
+                    //Remove N proportionally
+
+                    double partLiveN =  PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.N);
+                    double  partDeadN = PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.N);
+                    double partLiveRemoveN = partLiveN * liveToRemove;
+                    double partDeadRemoveN = partDeadN * deadToRemove;
+                    double partLiveDeadRemoveN = partLiveRemoveN + partDeadRemoveN;
+                    //removed.dltDM_N[idx] = partLiveDeadRemoveN ;
+                    
+                     double partLiveP =  PastureModel.GetHerbageNutr(stESTAB, part, TOTAL, TPlantElement.P);
+                    double  partDeadP = PastureModel.GetHerbageNutr(stDEAD, part, TOTAL, TPlantElement.N);
+                    double partLiveRemoveP = partLiveP * liveToRemove;
+                    double partDeadRemoveP = partDeadP * deadToRemove;
+                    double partLiveDeadRemoveP = partLiveRemoveP + partDeadRemoveP;
+                    //removed.dltDM_P[idx] = partLiveDeadRemoveP ;
+
+                    // removed.FractionToResidue[idx] = 1.0;
+
+                     for(int cls =0; cls <= 0; cls++)
+                {
+                   double liveStemDM = PastureModel.GetHerbageMass(stESTAB, part, cls);
+                    double RemoveLiveBiomass= liveStemDM  * liveToRemove;
+                    PastureModel.SetHerbageMass(stESTAB, part, cls, liveStemDM -RemoveLiveBiomass);
+
+                    double liveLeafDM = PastureModel.GetHerbageMass(stESTAB, 1 , cls);
+                    PastureModel.SetHerbageMass(stESTAB, 2, cls, liveLeafDM);
+
+                    double liveStemN = PastureModel.GetHerbageNutr(stESTAB, part, cls,TPlantElement.N);
+                    double liveStemP = PastureModel.GetHerbageNutr(stESTAB, part, cls, TPlantElement.P);
+                    PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.N, liveStemN  - liveStemN  * liveToRemove);
+                    PastureModel.SetHerbageNutr(stESTAB, part, cls, TPlantElement.P, liveStemP - liveStemP * liveToRemove);
+
+                    double liveLeafN = PastureModel.GetHerbageNutr(stESTAB, 1, cls,TPlantElement.N);
+                    double liveLeafP = PastureModel.GetHerbageNutr(stESTAB, 1, cls, TPlantElement.P);
+                    PastureModel.SetHerbageNutr(stESTAB, 1, cls, TPlantElement.N, liveStemN );
+                    PastureModel.SetHerbageNutr(stESTAB, 1, cls, TPlantElement.P, liveStemP);
+
+                    // Dead
+                    double deadStemDM = PastureModel.GetHerbageMass(stDEAD, part, cls);
+                    double RemoveDeadLeafDM = deadStemDM * deadToRemove;
+                    PastureModel.SetHerbageMass(stDEAD, part, cls, deadStemDM -  RemoveDeadLeafDM);
+
+                    double deadLeafDM = PastureModel.GetHerbageMass(stDEAD, 1, cls);
+                    PastureModel.SetHerbageMass(stDEAD, 1, cls, deadLeafDM );
+
+
+
+
+                    double deadStemN = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.N);
+                    double deadStemP = PastureModel.GetHerbageNutr(stDEAD, part, cls, TPlantElement.P);
+                    PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.N, deadStemN - deadStemN * deadToRemove);
+                    PastureModel.SetHerbageNutr(stDEAD, part, cls, TPlantElement.P, deadStemP - deadStemP * deadToRemove);
+
+                    double deadLeafN = PastureModel.GetHerbageNutr(stDEAD, 1, cls, TPlantElement.N);
+                    double deadLeafP = PastureModel.GetHerbageNutr(stDEAD, 1, cls, TPlantElement.P);
+                    PastureModel.SetHerbageNutr(stDEAD, 1, cls, TPlantElement.N, deadLeafN );
+                    PastureModel.SetHerbageNutr(stDEAD, 1, cls, TPlantElement.P, deadLeafP );
+                     
+
+                }
+
+                return partLiveDeadRemoveDM;
+
+
+
+            }
+
+            return 0.0;
+                
+           
+                
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       
+
+       
+
           
 
 
